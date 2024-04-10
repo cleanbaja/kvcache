@@ -1,3 +1,6 @@
 # zig outputs
 zig-cache/
 zig-out/
+
+# python venv
+venv/

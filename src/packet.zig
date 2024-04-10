@@ -121,6 +121,23 @@ pub const Packet = union(PacketTag) {
         }
     }
 
+    pub fn serialize(self: Packet, allocator: std.mem.Allocator) ![]u8 {
+        switch (self) {
+            .number => {
+                return try std.fmt.allocPrint(allocator, ":{}\r\n", .{self.number});
+            },
+            .simple_string => {
+                return try std.fmt.allocPrint(allocator, "+{s}\r\n", .{self.simple_string});
+            },
+            .bulk_string => {
+                return try std.fmt.allocPrint(allocator, "${}\r\n{s}\r\n", .{ self.bulk_string.len, self.bulk_string });
+            },
+            else => {
+                return error.Unsupported;
+            },
+        }
+    }
+
     pub fn deinit(self: Packet) void {
         if (@as(PacketTag, self) == PacketTag.array) {
             self.array.deinit();
