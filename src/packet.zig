@@ -114,6 +114,10 @@ pub const Packet = union(PacketTag) {
                 return Packet{ .array = try parseArray(buffer[1..], allocator) };
             },
 
+            'P' => {
+                return Packet{ .simple_string = "PING\r\n" };
+            },
+
             else => {
                 std.log.warn("Unsupported RESP type '{c}'", .{buffer[0]});
                 return error.Unsupported;
