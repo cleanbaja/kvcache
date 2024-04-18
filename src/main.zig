@@ -6,9 +6,6 @@ const print = std.debug.print;
 const Server = @import("Server.zig");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-
     var server = try Server.init(std.heap.c_allocator);
     defer server.deinit();
 

@@ -1,16 +1,18 @@
 const std = @import("std");
+const io = @import("io.zig");
+const cmd = @import("commands.zig");
 
 const net = std.net;
 const print = std.debug.print;
-
-const Client = @import("Client.zig");
-const io = @import("io/linux.zig");
+const Client = cmd.Client;
+const ClientList = cmd.ClientList;
 
 const Self = @This();
 
+clients: ClientList,
 allocator: std.mem.Allocator,
+store: std.StringHashMap([]const u8),
 accept_data: io.UserData,
-clients: std.ArrayList(*Client),
 socket: io.Handle,
 engine: io.Engine,
 
@@ -24,9 +26,11 @@ fn handleRequest(self: *Self) !void {
         switch (entry.getIoType()) {
             .accept => {
                 var socket = entry.getSocket();
-                var client = try Client.init(self.allocator, socket, &self.engine);
-                try self.clients.append(client);
+                var client = try Client.init(self.allocator, socket);
 
+                self.clients.prepend(&client.node);
+
+                // start the cycle...
                 try self.engine.add(io.Command.read(socket, client.buffer, 0, &client.userdata));
             },
 
@@ -35,11 +39,13 @@ fn handleRequest(self: *Self) !void {
                 var bytes_read = entry.getBytesCount();
 
                 if (bytes_read <= 0) {
-                    client.deinit();
-                    self.allocator.free(client.buffer);
-                    self.allocator.destroy(client);
+                    // free client
+                    self.clients.remove(&client.node);
+                    client.deinit(self.allocator);
                 } else {
-                    try client.process(client.buffer[0..@intCast(bytes_read)], self.allocator);
+                    // print("data: {s}\n", .{client.buffer[0..@intCast(bytes_read)]});
+                    try cmd.process(client, @intCast(bytes_read), self.allocator, &self.store);
+
                     try self.engine.add(io.Command.read(client.handle, client.buffer, 0, &client.userdata));
                 }
             },
@@ -57,8 +63,9 @@ pub fn init(alloc: std.mem.Allocator) !Self {
     return Self{
         .allocator = alloc,
         .socket = socket,
-        .clients = std.ArrayList(*Client).init(alloc),
+        .clients = ClientList{},
         .engine = try io.Engine.init(alloc),
+        .store = std.StringHashMap([]const u8).init(alloc),
         .accept_data = std.mem.zeroes(io.UserData),
     };
 }
@@ -73,12 +80,15 @@ pub fn runLoop(self: *Self) !void {
 
 pub fn deinit(self: *Self) void {
     self.engine.deinit();
+    self.store.deinit();
     std.os.closeSocket(self.socket);
 
-    for (self.clients.items) |client| {
-        client.deinit();
-
-        self.allocator.free(client.buffer);
-        self.allocator.destroy(client);
+    {
+        var it = self.clients.first;
+        var index: u32 = 1;
+        while (it) |node| : (it = node.next) {
+            node.data.deinit(self.allocator);
+            index += 1;
+        }
     }
 }

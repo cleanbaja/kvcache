@@ -219,6 +219,7 @@ test "uring read/write" {
     }
 
     try std.testing.expectEqualStrings(write_buffer, read_buffer);
+    try std.fs.cwd().deleteFile("testing.txt");
 }
 
 //
