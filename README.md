@@ -14,7 +14,7 @@ $ zig build
 
 ### Installation
 
-I **highly** discourage doing this, since KVcache is a very beta piece of software
+I **highly** discourage doing this, since KVcache is a very beta piece of software.
 However, for the adventurous souls here, this is for you:
 
 ```bash

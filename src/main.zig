@@ -9,7 +9,7 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
 
-    var server = try Server.init(gpa.allocator());
+    var server = try Server.init(std.heap.c_allocator);
     defer server.deinit();
 
     try server.runLoop();
