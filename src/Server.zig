@@ -3,64 +3,82 @@ const std = @import("std");
 const net = std.net;
 const print = std.debug.print;
 
-const Packet = @import("packet.zig").Packet;
-const ArrayType = @import("packet.zig").ArrayType;
 const Client = @import("Client.zig");
+const io = @import("io/linux.zig");
 
 const Self = @This();
 
 allocator: std.mem.Allocator,
-server: net.StreamServer,
+accept_data: io.UserData,
+clients: std.ArrayList(*Client),
+socket: io.Handle,
+engine: io.Engine,
 
 /// Run the TCP server and handle incoming requests.
 fn handleRequest(self: *Self) !void {
-    // Accept incoming connection.
-    var conn = try self.server.accept();
-    var client = Client.init(self.allocator);
-    defer conn.stream.close();
+    // sumbit all the previous IO commands, and wait for results
+    _ = try self.engine.submit(1);
 
-    print("kvcache: connection open ={}\n", .{conn.address});
+    // process all the results...
+    for (try self.engine.getResults()) |entry| {
+        switch (entry.getIoType()) {
+            .accept => {
+                var socket = entry.getSocket();
+                var client = try Client.init(self.allocator, socket, &self.engine);
+                try self.clients.append(client);
 
-    while (true) {
-        // Read message into buffer.
-        var recv_buffer = std.mem.zeroes([512]u8);
-        const len = try conn.stream.read(&recv_buffer);
+                try self.engine.add(io.Command.read(socket, client.buffer, 0, &client.userdata));
+            },
 
-        if (len == 0)
-            break;
+            .read => {
+                var client = try entry.getContext(Client);
+                var bytes_read = entry.getBytesCount();
 
-        try client.process(recv_buffer[0..len], &conn.stream, self.allocator);
+                if (bytes_read <= 0) {
+                    client.deinit();
+                    self.allocator.free(client.buffer);
+                    self.allocator.destroy(client);
+                } else {
+                    try client.process(client.buffer[0..@intCast(bytes_read)], self.allocator);
+                    try self.engine.add(io.Command.read(client.handle, client.buffer, 0, &client.userdata));
+                }
+            },
+
+            else => {},
+        }
     }
-
-    print("kvcache: connection closed\n", .{});
 }
 
 pub fn init(alloc: std.mem.Allocator) !Self {
-    const addr = try net.Address.parseIp4("127.0.0.1", 6379);
+    const socket = try io.createSocket(6379);
 
-    var server = blk: {
-        var stream = net.StreamServer.init(.{
-            .reuse_port = true,
-        });
-
-        try stream.listen(addr);
-        break :blk stream;
-    };
-
-    print("kvcache: listening on {}\n", .{addr.getPort()});
+    print("kvcache: listening on localhost:6379\n", .{});
 
     return Self{
         .allocator = alloc,
-        .server = server,
+        .socket = socket,
+        .clients = std.ArrayList(*Client).init(alloc),
+        .engine = try io.Engine.init(alloc),
+        .accept_data = std.mem.zeroes(io.UserData),
     };
 }
 
 pub fn runLoop(self: *Self) !void {
+    try self.engine.add(io.Command.accept_multishot(self.socket, &self.accept_data));
+
     while (true) {
         try self.handleRequest();
     }
 }
 
 pub fn deinit(self: *Self) void {
-    self.server.deinit();
+    self.engine.deinit();
+    std.os.closeSocket(self.socket);
+
+    for (self.clients.items) |client| {
+        client.deinit();
+
+        self.allocator.free(client.buffer);
+        self.allocator.destroy(client);
+    }
 }

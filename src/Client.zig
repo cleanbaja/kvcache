@@ -1,22 +1,35 @@
 const std = @import("std");
 const net = std.net;
 
+const print = std.debug.print;
 const Packet = @import("packet.zig").Packet;
 const ArrayType = @import("packet.zig").ArrayType;
-const print = std.debug.print;
+const io = @import("io/linux.zig");
 
 lib_name: ?[]const u8,
 lib_ver: ?[]const u8,
 store: std.StringHashMap([]const u8),
+engine: *io.Engine,
+handle: io.Handle,
+buffer: []u8,
+userdata: io.UserData,
 
 const Self = @This();
 
-pub fn init(allocator: std.mem.Allocator) Self {
-    return Self{
+pub fn init(allocator: std.mem.Allocator, handle: io.Handle, engine: *io.Engine) !*Self {
+    var client = try allocator.create(Self);
+
+    client.* = .{
         .store = std.StringHashMap([]const u8).init(allocator),
+        .buffer = try allocator.alloc(u8, 512),
+        .userdata = .{ .ctx = client, .type = .nop },
+        .handle = handle,
+        .engine = engine,
         .lib_name = null,
         .lib_ver = null,
     };
+
+    return client;
 }
 
 fn handleClient(self: *Self, allocator: std.mem.Allocator, packet: Packet, stream: *net.Stream) !void {
@@ -42,8 +55,11 @@ fn handleClient(self: *Self, allocator: std.mem.Allocator, packet: Packet, strea
     try stream.writeAll("+OK\r\n");
 }
 
-pub fn process(self: *Self, buffer: []const u8, stream: *std.net.Stream, allocator: std.mem.Allocator) !void {
+pub fn process(self: *Self, buffer: []const u8, allocator: std.mem.Allocator) !void {
     const packet = try Packet.parse(buffer, allocator);
+
+    // TODO: super hacky, use async io instead
+    var stream = net.Stream{ .handle = self.handle };
 
     switch (packet) {
         .simple_string => {
@@ -57,7 +73,7 @@ pub fn process(self: *Self, buffer: []const u8, stream: *std.net.Stream, allocat
 
             // TODO: safety checks
             if (std.mem.eql(u8, command, "CLIENT")) {
-                try self.handleClient(allocator, packet, stream);
+                try self.handleClient(allocator, packet, &stream);
             } else if (std.mem.eql(u8, command, "SET")) {
                 const value = try allocator.dupe(u8, packet.array.items[2].str);
                 try self.store.put(packet.array.items[1].str, value);
@@ -81,6 +97,7 @@ pub fn process(self: *Self, buffer: []const u8, stream: *std.net.Stream, allocat
     }
 }
 
-pub fn deinit(self: *Self) !Self {
+pub fn deinit(self: *Self) void {
     self.store.deinit();
+    std.os.closeSocket(self.handle);
 }
