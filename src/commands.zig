@@ -74,7 +74,7 @@ fn handleClient(client: *Client, allocator: std.mem.Allocator, packet: Packet, s
     try stream.writeAll("+OK\r\n");
 }
 
-pub fn process(client: *Client, len: usize, alloc: std.mem.Allocator, store: *std.StringHashMap([]const u8)) !void {
+pub fn process(client: *Client, len: usize, alloc: std.mem.Allocator, store: *std.StringHashMap([]const u8), store_mutex: *std.Thread.Mutex) !void {
     const packet = try Packet.parse(client.buffer[0..len], alloc);
 
     // TODO: super hacky, use async io instead
@@ -97,11 +97,24 @@ pub fn process(client: *Client, len: usize, alloc: std.mem.Allocator, store: *st
                 try handleClient(client, alloc, packet, &stream);
             } else if (std.mem.eql(u8, command, "SET")) {
                 const value = try alloc.dupe(u8, packet.array.items[2].str);
-                try store.put(packet.array.items[1].str, value);
+
+                {
+                    store_mutex.lock();
+                    defer store_mutex.unlock();
+
+                    try store.put(packet.array.items[1].str, value);
+                }
 
                 try stream.writeAll("+OK\r\n");
             } else if (std.mem.eql(u8, command, "GET")) {
-                if (store.get(packet.array.items[1].str)) |val| {
+                var store_item = blk: {
+                    store_mutex.lock();
+                    defer store_mutex.unlock();
+
+                    break :blk store.get(packet.array.items[1].str);
+                };
+
+                if (store_item) |val| {
                     const out = Packet{ .bulk_string = val };
 
                     try stream.writeAll(try out.serialize(alloc));
