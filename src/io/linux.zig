@@ -3,8 +3,8 @@ const std = @import("std");
 const os = std.os;
 const linux = std.os.linux;
 
-const MAX_SQE = 256;
-const MAX_CQE = 128;
+const MAX_SQE = 512;
+const MAX_CQE = 512;
 
 pub const Handle = linux.fd_t;
 

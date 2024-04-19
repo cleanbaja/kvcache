@@ -1,9 +1,8 @@
 const std = @import("std");
 const io = @import("io.zig");
+const pr = @import("parser.zig");
 
 const print = std.debug.print;
-const Packet = @import("packet.zig").Packet;
-const ArrayType = @import("packet.zig").ArrayType;
 
 pub const ClientList = std.SinglyLinkedList(*Client);
 
@@ -51,12 +50,12 @@ pub const Client = struct {
     }
 };
 
-fn handleClient(client: *Client, allocator: std.mem.Allocator, packet: Packet, stream: *std.net.Stream) !void {
-    const cmd = packet.array.items[1].str;
+fn handleClient(client: *Client, allocator: std.mem.Allocator, packet: pr.ParseItem, stream: *std.net.Stream) !void {
+    const cmd = packet.list.items[1].string;
 
     if (std.mem.eql(u8, cmd, "SETINFO")) {
-        const attrib = packet.array.items[2].str;
-        const value = packet.array.items[3].str;
+        const attrib = packet.list.items[2].string;
+        const value = packet.list.items[3].string;
 
         if (std.mem.eql(u8, attrib, "LIB-NAME")) {
             client.lib_name = try allocator.dupe(u8, value);
@@ -75,20 +74,22 @@ fn handleClient(client: *Client, allocator: std.mem.Allocator, packet: Packet, s
 }
 
 pub fn process(client: *Client, len: usize, alloc: std.mem.Allocator, store: *std.StringHashMap([]const u8), store_mutex: *std.Thread.Mutex) !void {
-    const packet = try Packet.parse(client.buffer[0..len], alloc);
+    var parser = pr.Parser.init(alloc);
+
+    const packet = try parser.execute(client.buffer[0..len]);
 
     // TODO: super hacky, use async io instead
     var stream = std.net.Stream{ .handle = client.handle };
 
     switch (packet) {
-        .simple_string => {
-            if (std.mem.startsWith(u8, packet.simple_string, "PING")) {
+        .string => {
+            if (std.mem.startsWith(u8, packet.string, "PING")) {
                 try stream.writeAll("+PONG\r\n");
             }
         },
 
-        .array => {
-            const command = packet.array.items[0].str;
+        .list => {
+            const command = packet.list.items[0].string;
 
             // TODO: safety checks
             if (std.mem.eql(u8, command, "PING")) {
@@ -96,13 +97,13 @@ pub fn process(client: *Client, len: usize, alloc: std.mem.Allocator, store: *st
             } else if (std.mem.eql(u8, command, "CLIENT")) {
                 try handleClient(client, alloc, packet, &stream);
             } else if (std.mem.eql(u8, command, "SET")) {
-                const value = try alloc.dupe(u8, packet.array.items[2].str);
+                const value = try alloc.dupe(u8, packet.list.items[2].string);
 
                 {
                     store_mutex.lock();
                     defer store_mutex.unlock();
 
-                    try store.put(packet.array.items[1].str, value);
+                    try store.put(packet.list.items[1].string, value);
                 }
 
                 try stream.writeAll("+OK\r\n");
@@ -111,19 +112,20 @@ pub fn process(client: *Client, len: usize, alloc: std.mem.Allocator, store: *st
                     store_mutex.lock();
                     defer store_mutex.unlock();
 
-                    break :blk store.get(packet.array.items[1].str);
+                    break :blk store.get(packet.list.items[1].string);
                 };
 
                 if (store_item) |val| {
-                    const out = Packet{ .bulk_string = val };
+                    const result = try std.fmt.allocPrint(alloc, "${}\r\n{s}\r\n", .{ val.len, val });
 
-                    try stream.writeAll(try out.serialize(alloc));
+                    try stream.writeAll(result);
+                    alloc.free(result);
                 } else {
                     try stream.writeAll("$-1\r\n");
                 }
             } else {
                 // just pretend like we know what we are doing...
-                try stream.writeAll("+OK\r\n");
+                try stream.writeAll("+PONG\r\n");
             }
         },
 
