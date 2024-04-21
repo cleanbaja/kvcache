@@ -12,18 +12,18 @@ pub const Handle = switch (builtin.target.os.tag) {
     else => @compileError("no IO layer for platform..."),
 };
 
-pub const IoResultType = switch (builtin.target.os.tag) {
-    .linux => linux.IoResultType,
+pub const IoType = switch (builtin.target.os.tag) {
+    .linux => linux.IoType,
     else => @compileError("no IO layer for platform..."),
 };
 
-pub const Command = switch (builtin.target.os.tag) {
-    .linux => linux.Command,
+pub const Result = switch (builtin.target.os.tag) {
+    .linux => linux.Result,
     else => @compileError("no IO layer for platform..."),
 };
 
-pub const UserData = switch (builtin.target.os.tag) {
-    .linux => linux.UserData,
+pub const Context = switch (builtin.target.os.tag) {
+    .linux => linux.Context,
     else => @compileError("no IO layer for platform..."),
 };
 

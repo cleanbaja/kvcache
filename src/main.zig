@@ -1,7 +1,6 @@
 const std = @import("std");
 
 const net = std.net;
-const print = std.debug.print;
 
 const Server = @import("Server.zig");
 

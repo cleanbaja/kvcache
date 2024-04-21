@@ -1,153 +1,147 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 const os = std.os;
 const linux = std.os.linux;
 
-const MAX_SQE = 512;
-const MAX_CQE = 512;
+const MAX_ENTRIES = 128;
 
 pub const Handle = linux.fd_t;
 
-pub const IoResultType = enum(u64) {
-    nop,
+pub const IoType = enum(u64) {
+    nop = 0,
     accept,
     read,
     write,
+    close,
 };
 
-pub const UserData = struct {
-    type: IoResultType,
-    ctx: ?*anyopaque,
+pub const Result = struct {
+    res: i32,
+    flags: u32,
 };
 
-pub const IoResult = extern struct {
-    cqe: linux.io_uring_cqe,
-
-    pub fn getIoType(self: *const IoResult) IoResultType {
-        if (self.cqe.user_data == 0)
-            unreachable;
-
-        const udata: *UserData = @ptrFromInt(self.cqe.user_data);
-        return udata.type;
-    }
-
-    pub fn getSocket(self: *const IoResult) Handle {
-        std.debug.assert(self.getIoType() == .accept);
-
-        return self.cqe.res;
-    }
-
-    pub fn getContext(self: *const IoResult, comptime T: type) !*T {
-        if (self.cqe.user_data == 0)
-            return error.NoUserData;
-
-        const udata: *UserData = @ptrFromInt(self.cqe.user_data);
-
-        if (udata.ctx) |ctx| {
-            return @alignCast(@ptrCast(ctx));
-        } else {
-            return error.NoUserData;
-        }
-    }
-
-    pub fn getBytesCount(self: *const IoResult) i32 {
-        std.debug.assert(self.getIoType() == .read or self.getIoType() == .write);
-
-        return self.cqe.res;
-    }
+pub const Context = struct {
+    type: IoType,
+    handler: *const fn (kind: IoType, ctx: ?*anyopaque, result: Result) anyerror!void,
+    userptr: ?*anyopaque,
 };
 
 pub const Engine = struct {
     ring: linux.IO_Uring,
-    allocator: std.mem.Allocator,
-    entries: []IoResult,
+    pending: usize,
+    handles: []Handle,
 
     pub fn init(allocator: std.mem.Allocator) !Engine {
-        return Engine{
-            .ring = try linux.IO_Uring.init(MAX_SQE, 0),
-            .entries = try allocator.alloc(IoResult, MAX_CQE),
-            .allocator = allocator,
+        var fdtable = try allocator.alloc(Handle, 512);
+        @memset(fdtable, 0);
+
+        var engine = Engine{
+            .ring = try linux.IO_Uring.init(MAX_ENTRIES, 0),
+            .handles = fdtable,
+            .pending = 0,
         };
+
+        try engine.ring.register_files(engine.handles);
+        return engine;
     }
 
     pub fn deinit(self: *Engine) void {
         self.ring.deinit();
-        self.allocator.free(self.entries);
     }
 
-    pub fn add(self: *Engine, command: Command) !void {
-        var entry = try self.ring.get_sqe();
+    fn getEntry(self: *Engine) !*linux.io_uring_sqe {
+        var entry = self.ring.get_sqe() catch |err| switch (err) {
+            error.SubmissionQueueFull => blk: {
+                const done = try self.ring.submit();
+                self.pending -= done;
 
-        entry.* = command.getRaw();
-    }
+                // TODO: what if get_sqe errors out again?
+                break :blk self.ring.get_sqe();
+            },
+            else => return err,
+        };
 
-    pub fn getResults(self: *Engine) ![]IoResult {
-        // we do the waiting in "submit", so don't do it here
-        const total = try self.ring.copy_cqes(@ptrCast(self.entries), 0);
+        self.pending += 1;
 
-        return self.entries[0..total];
+        return entry;
     }
 
     pub fn submit(self: *Engine, wait_entry_count: u32) !u32 {
-        return try self.ring.submit_and_wait(wait_entry_count);
+        var done = try self.ring.submit_and_wait(wait_entry_count);
+        self.pending -= done;
+
+        return done;
     }
-};
 
-pub const Command = struct {
-    sqe: linux.io_uring_sqe,
+    pub fn flush(self: *Engine) !void {
+        var cqes: [128]linux.io_uring_cqe = undefined;
 
-    pub fn nop(userdata: ?*UserData) Command {
-        var cmd = std.mem.zeroes(Command);
-        linux.io_uring_prep_nop(&cmd.sqe);
+        while (true) {
+            if (self.pending != 0) {
+                var done = try self.ring.submit_and_wait(1);
+                self.pending -= done;
+            }
 
-        if (userdata) |udata| {
-            udata.type = .nop;
-            cmd.sqe.user_data = @intFromPtr(udata);
+            // `error.SignalInterrupt` should be handled by the callee (just call `flush()` again)
+            const len = try self.ring.copy_cqes(&cqes, 0);
+
+            if (len == 0) {
+                break;
+            }
+
+            for (cqes[0..len]) |cqe| {
+                var context: *Context = @ptrFromInt(cqe.user_data);
+
+                try context.handler(context.type, context.userptr, Result{ .res = cqe.res, .flags = cqe.flags });
+            }
         }
-
-        return cmd;
     }
 
-    pub fn read(handle: Handle, buffer: []u8, offset: u64, userdata: ?*UserData) Command {
-        var cmd = std.mem.zeroes(Command);
-        linux.io_uring_prep_read(&cmd.sqe, handle, buffer, offset);
+    // --------------------------------
+    //            Operators
+    // --------------------------------
 
-        if (userdata) |udata| {
-            udata.type = .read;
-            cmd.sqe.user_data = @intFromPtr(udata);
-        }
+    pub fn do_nop(self: *Engine, ctx: *Context) !void {
+        var sqe = try self.getEntry();
+        linux.io_uring_prep_nop(sqe);
 
-        return cmd;
+        ctx.type = .nop;
+        sqe.user_data = @intFromPtr(ctx);
     }
 
-    pub fn write(handle: Handle, buffer: []u8, offset: u64, userdata: ?*UserData) Command {
-        var cmd = std.mem.zeroes(Command);
-        linux.io_uring_prep_write(&cmd.sqe, handle, buffer, offset);
+    pub fn do_read(self: *Engine, handle: Handle, buffer: []u8, offset: u64, ctx: *Context) !void {
+        var sqe = try self.getEntry();
+        linux.io_uring_prep_read(sqe, handle, buffer, offset);
 
-        if (userdata) |udata| {
-            udata.type = .write;
-            cmd.sqe.user_data = @intFromPtr(udata);
-        }
-
-        return cmd;
+        ctx.type = .read;
+        sqe.user_data = @intFromPtr(ctx);
     }
 
-    pub fn accept_multishot(handle: Handle, userdata: ?*UserData) Command {
-        var cmd = std.mem.zeroes(Command);
-        linux.io_uring_prep_accept(&cmd.sqe, handle, null, null, 0);
+    pub fn do_write(self: *Engine, handle: Handle, buffer: []const u8, offset: u64, ctx: *Context) !void {
+        var sqe = try self.getEntry();
+        linux.io_uring_prep_write(sqe, handle, buffer, offset);
 
-        cmd.sqe.ioprio |= 0b1; // IO_URING_ACCEPT_MULTISHOT
-
-        if (userdata) |udata| {
-            udata.type = .accept;
-            cmd.sqe.user_data = @intFromPtr(udata);
-        }
-
-        return cmd;
+        ctx.type = .write;
+        sqe.user_data = @intFromPtr(ctx);
     }
 
-    pub fn getRaw(self: *const Command) linux.io_uring_sqe {
-        return self.sqe;
+    pub fn do_close(self: *Engine, handle: Handle, ctx: *Context) !void {
+        var sqe = try self.getEntry();
+        linux.io_uring_prep_close(sqe, handle);
+
+        ctx.type = .close;
+        sqe.user_data = @intFromPtr(ctx);
+    }
+
+    pub fn do_accept_multishot(self: *Engine, handle: Handle, ctx: *Context) !void {
+        var sqe = try self.getEntry();
+        linux.io_uring_prep_accept(sqe, handle, null, null, 0);
+
+        sqe.ioprio |= 0b1; // IO_URING_ACCEPT_MULTISHOT
+
+        sqe.user_data = @intFromPtr(ctx);
+        ctx.type = .accept;
     }
 };
 
@@ -180,26 +174,53 @@ pub fn createSocket(port: u16) !Handle {
     return sockfd;
 }
 
-test "uring nop" {
-    var engine = try Engine.init(std.testing.allocator);
-    defer engine.deinit();
+fn testingHandler(kind: IoType, ctx: ?*anyopaque, result: Result) anyerror!void {
+    _ = ctx;
 
-    try engine.add(Command.nop(null));
-    try engine.add(Command.nop(null));
-    _ = try engine.submit(1);
+    if (!builtin.is_test) {
+        @compileError("attempt to call 'testingHandler()' outside of zig test!");
+    }
 
-    for (try engine.getResults()) |entry| {
-        try std.testing.expect(entry.cqe.err() == linux.E.SUCCESS);
+    switch (kind) {
+        .nop => {
+            try std.testing.expect(result.res >= 0); // res < 0 means error
+        },
+
+        .read, .write => {
+            try std.testing.expect(result.res == 512); // bytes read/written
+        },
+
+        .close => {
+            try std.testing.expect(result.res >= 0); // res < 0 means error
+        },
+
+        .accept => {
+            try std.testing.expect(result.res >= 0); // res < 0 means error
+            try std.testing.expect(result.flags == 2); // IORING_CQE_F_MORE
+        },
     }
 }
 
-test "uring read/write" {
-    var engine = try Engine.init(std.testing.allocator);
+test "uring nop" {
+    var engine = try Engine.init();
+    defer engine.deinit();
+
+    var context = Context{
+        .type = undefined,
+        .userptr = null,
+        .handler = testingHandler,
+    };
+
+    try engine.do_nop(&context);
+    _ = try engine.flush();
+}
+
+test "uring read/write/close" {
+    var engine = try Engine.init();
     defer engine.deinit();
 
     const raw_handle = try std.fs.cwd().createFile("testing.txt", .{ .read = true });
     const handle = raw_handle.handle;
-    defer raw_handle.close();
 
     var write_buffer = try std.testing.allocator.alloc(u8, 512);
     var read_buffer = try std.testing.allocator.alloc(u8, 512);
@@ -208,15 +229,16 @@ test "uring read/write" {
 
     @memset(write_buffer, 0xE9);
 
-    try engine.add(Command.write(handle, write_buffer, 0, null));
-    try engine.add(Command.read(handle, read_buffer, 0, null));
+    var context = Context{
+        .type = undefined,
+        .userptr = null,
+        .handler = testingHandler,
+    };
 
-    _ = try engine.submit(1);
-
-    for (try engine.getResults()) |entry| {
-        try std.testing.expect(entry.cqe.err() == linux.E.SUCCESS);
-        try std.testing.expect(entry.cqe.res == 512); // bytes read
-    }
+    try engine.do_write(handle, write_buffer, 0, &context);
+    try engine.do_read(handle, read_buffer, 0, &context);
+    try engine.do_close(handle, &context);
+    _ = try engine.flush();
 
     try std.testing.expectEqualStrings(write_buffer, read_buffer);
     try std.fs.cwd().deleteFile("testing.txt");
@@ -230,17 +252,18 @@ test "uring read/write" {
 // ```
 //
 test "uring accept multishot" {
-    var engine = try Engine.init(std.testing.allocator);
+    var engine = try Engine.init();
     defer engine.deinit();
 
     var socket = try createSocket(8284);
-    defer os.closeSocket(socket);
 
-    try engine.add(Command.accept_multishot(socket, null));
-    _ = try engine.submit(1);
+    var context = Context{
+        .type = undefined,
+        .userptr = null,
+        .handler = testingHandler,
+    };
 
-    for (try engine.getResults()) |entry| {
-        try std.testing.expect(entry.cqe.err() == linux.E.SUCCESS);
-        try std.testing.expect(entry.cqe.flags == 2); // IORING_CQE_F_MORE
-    }
+    try engine.do_accept_multishot(socket, &context);
+    try engine.do_close(socket, &context);
+    _ = try engine.flush();
 }
