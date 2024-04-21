@@ -2,6 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 
 const os = std.os;
+const posix = std.posix;
 const linux = std.os.linux;
 
 const MAX_ENTRIES = 128;
@@ -28,16 +29,16 @@ pub const Context = struct {
 };
 
 pub const Engine = struct {
-    ring: linux.IO_Uring,
+    ring: linux.IoUring,
     pending: usize,
     handles: []Handle,
 
     pub fn init(allocator: std.mem.Allocator) !Engine {
-        var fdtable = try allocator.alloc(Handle, 512);
+        const fdtable = try allocator.alloc(Handle, 512);
         @memset(fdtable, 0);
 
         var engine = Engine{
-            .ring = try linux.IO_Uring.init(MAX_ENTRIES, 0),
+            .ring = try linux.IoUring.init(MAX_ENTRIES, 0),
             .handles = fdtable,
             .pending = 0,
         };
@@ -51,7 +52,7 @@ pub const Engine = struct {
     }
 
     fn getEntry(self: *Engine) !*linux.io_uring_sqe {
-        var entry = self.ring.get_sqe() catch |err| switch (err) {
+        const entry = self.ring.get_sqe() catch |err| switch (err) {
             error.SubmissionQueueFull => blk: {
                 const done = try self.ring.submit();
                 self.pending -= done;
@@ -68,7 +69,7 @@ pub const Engine = struct {
     }
 
     pub fn submit(self: *Engine, wait_entry_count: u32) !u32 {
-        var done = try self.ring.submit_and_wait(wait_entry_count);
+        const done = try self.ring.submit_and_wait(wait_entry_count);
         self.pending -= done;
 
         return done;
@@ -79,8 +80,7 @@ pub const Engine = struct {
 
         while (true) {
             if (self.pending != 0) {
-                var done = try self.ring.submit_and_wait(1);
-                self.pending -= done;
+                self.pending -= try self.ring.submit_and_wait(1);
             }
 
             // `error.SignalInterrupt` should be handled by the callee (just call `flush()` again)
@@ -104,7 +104,7 @@ pub const Engine = struct {
 
     pub fn do_nop(self: *Engine, ctx: *Context) !void {
         var sqe = try self.getEntry();
-        linux.io_uring_prep_nop(sqe);
+        sqe.prep_nop();
 
         ctx.type = .nop;
         sqe.user_data = @intFromPtr(ctx);
@@ -112,7 +112,7 @@ pub const Engine = struct {
 
     pub fn do_read(self: *Engine, handle: Handle, buffer: []u8, offset: u64, ctx: *Context) !void {
         var sqe = try self.getEntry();
-        linux.io_uring_prep_read(sqe, handle, buffer, offset);
+        sqe.prep_read(handle, buffer, offset);
 
         ctx.type = .read;
         sqe.user_data = @intFromPtr(ctx);
@@ -120,7 +120,7 @@ pub const Engine = struct {
 
     pub fn do_write(self: *Engine, handle: Handle, buffer: []const u8, offset: u64, ctx: *Context) !void {
         var sqe = try self.getEntry();
-        linux.io_uring_prep_write(sqe, handle, buffer, offset);
+        sqe.prep_write(handle, buffer, offset);
 
         ctx.type = .write;
         sqe.user_data = @intFromPtr(ctx);
@@ -128,7 +128,7 @@ pub const Engine = struct {
 
     pub fn do_close(self: *Engine, handle: Handle, ctx: *Context) !void {
         var sqe = try self.getEntry();
-        linux.io_uring_prep_close(sqe, handle);
+        sqe.prep_close(handle);
 
         ctx.type = .close;
         sqe.user_data = @intFromPtr(ctx);
@@ -136,7 +136,7 @@ pub const Engine = struct {
 
     pub fn do_accept_multishot(self: *Engine, handle: Handle, ctx: *Context) !void {
         var sqe = try self.getEntry();
-        linux.io_uring_prep_accept(sqe, handle, null, null, 0);
+        sqe.prep_accept(handle, null, null, 0);
 
         sqe.ioprio |= 0b1; // IO_URING_ACCEPT_MULTISHOT
 
@@ -147,29 +147,29 @@ pub const Engine = struct {
 
 /// Creates a server socket, bind it and listen on it.
 pub fn createSocket(port: u16) !Handle {
-    const sockfd = try os.socket(os.AF.INET6, os.SOCK.STREAM, 0);
-    errdefer os.close(sockfd);
+    const sockfd = try posix.socket(posix.AF.INET6, posix.SOCK.STREAM, 0);
+    errdefer posix.close(sockfd);
 
     // allow for multiple listeners on 1 thread
-    try os.setsockopt(
+    try posix.setsockopt(
         sockfd,
-        os.SOL.SOCKET,
-        os.SO.REUSEPORT,
+        posix.SOL.SOCKET,
+        posix.SO.REUSEPORT,
         &std.mem.toBytes(@as(c_int, 1)),
     );
 
     // enable ipv4 as well
-    try os.setsockopt(
+    try posix.setsockopt(
         sockfd,
-        os.IPPROTO.IPV6,
+        posix.IPPROTO.IPV6,
         os.linux.IPV6.V6ONLY,
         &std.mem.toBytes(@as(c_int, 0)),
     );
 
     const addr = try std.net.Address.parseIp6("::0", port);
 
-    try os.bind(sockfd, &addr.any, @sizeOf(os.sockaddr.in6));
-    try os.listen(sockfd, std.math.maxInt(u31));
+    try posix.bind(sockfd, &addr.any, @sizeOf(posix.sockaddr.in6));
+    try posix.listen(sockfd, std.math.maxInt(u31));
 
     return sockfd;
 }
@@ -222,8 +222,8 @@ test "uring read/write/close" {
     const raw_handle = try std.fs.cwd().createFile("testing.txt", .{ .read = true });
     const handle = raw_handle.handle;
 
-    var write_buffer = try std.testing.allocator.alloc(u8, 512);
-    var read_buffer = try std.testing.allocator.alloc(u8, 512);
+    const write_buffer = try std.testing.allocator.alloc(u8, 512);
+    const read_buffer = try std.testing.allocator.alloc(u8, 512);
     defer std.testing.allocator.free(write_buffer);
     defer std.testing.allocator.free(read_buffer);
 
@@ -255,7 +255,7 @@ test "uring accept multishot" {
     var engine = try Engine.init();
     defer engine.deinit();
 
-    var socket = try createSocket(8284);
+    const socket = try createSocket(8284);
 
     var context = Context{
         .type = undefined,

@@ -20,7 +20,7 @@ const Client = struct {
     buffer: []u8,
 
     pub fn init(allocator: std.mem.Allocator, parent: *Self, handle: io.Handle, func: anytype) !*Client {
-        var client = try allocator.create(Client);
+        const client = try allocator.create(Client);
         const ctx = .{ .userptr = client, .handler = func, .type = .nop };
 
         client.* = .{
@@ -62,7 +62,7 @@ pub fn deinit(self: *Self) void {
     self.engine.deinit();
     self.allocator.free(self.engine.handles);
 
-    std.os.closeSocket(self.socket);
+    std.posix.close(self.socket);
 }
 
 fn destroyClient(self: *Self, client: *Client) !void {
@@ -99,7 +99,7 @@ fn process(self: *Self, client: *Client, buffer: []u8) !void {
 
                 try self.engine.do_write(client.handle, "+OK\r\n", 0, &client.contexts[1]);
             } else if (std.mem.eql(u8, command, "GET")) {
-                var store_item = self.store.get(packet.list.items[1].string);
+                const store_item = self.store.get(packet.list.items[1].string);
 
                 if (store_item) |val| {
                     const result = try std.fmt.allocPrint(self.allocator, "${}\r\n{s}\r\n", .{ val.len, val });
@@ -145,7 +145,7 @@ fn handleRequest(kind: io.IoType, ctx: ?*anyopaque, result: io.Result) !void {
         },
 
         .close => {
-            var client: *Client = @alignCast(@ptrCast(ctx));
+            const client: *Client = @alignCast(@ptrCast(ctx));
             var self = client.parent;
 
             try self.destroyClient(client);
