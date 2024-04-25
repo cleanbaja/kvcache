@@ -1,11 +1,52 @@
+//! # Linux IO Interface
+//!
+//! The linux IO interface for kvcache uses IO Uring,
+//! which is a relatively standardized method of
+//! Async IO (designed to replace linux AIO).
+//!
+//! ## Features
+//!
+//! This implementation takes advantage of a few
+//! extensions to IO Uring, which is why the minimum
+//! kernel verison supported is around ~5.19. However,
+//! I recommend you use kernel 6.1 or higher for some
+//! key improvements/features introduced to IO Uring.
+//!
+//! The required features are as follows:
+//!  - IORING_FEAT_CQE_SKIP: Don't generate CQEs for
+//!    certain SQE calls, saves space on the CQE.
+//!    (available since kernel 5.17)
+//!
+//!  - IORING_FEAT_NODROP: The kernel will *almost* never
+//!    drop CQEs, instead queueing them internally and
+//!    returning -EBUSY when the internal buffer is full.
+//!    (available since kernel 5.19)
+//!
+//!  - Ring Mapped Buffers: This is not a new feature
+//!    per se, but rather a improvement on an already
+//!    existing feature (registered buffers). It adds
+//!    an ring abstraction which makes buffer management
+//!    *very* seamless...
+//!    (available since kernel 5.19)
+//!
+//! ## Docs
+//!
+//! Below are some great resources on IO Uring, which I
+//! recommend you take a look at before reading this code...
+//!
+//! (ofcourse, the best resource are the manpages)
+//!
+//! - [Unixism IO Uring guide](https://unixism.net/loti/)
+//! - [Awesome IO Uring](https://github.com/noteflakes/awesome-io_uring)
+//!
+
 const std = @import("std");
 const builtin = @import("builtin");
 
-const os = std.os;
 const posix = std.posix;
 const linux = std.os.linux;
 
-const MAX_ENTRIES = 128;
+const MAX_ENTRIES = 64;
 
 pub const Handle = linux.fd_t;
 
@@ -15,11 +56,13 @@ pub const IoType = enum(u64) {
     read,
     write,
     close,
+    recv,
 };
 
 pub const Result = struct {
     res: i32,
     flags: u32,
+    buffer: ?[]u8,
 };
 
 pub const Context = struct {
@@ -30,37 +73,84 @@ pub const Context = struct {
 
 pub const Engine = struct {
     ring: linux.IoUring,
+    buffers: linux.IoUring.BufferGroup,
+    allocator: std.mem.Allocator,
+    rawbufs: []u8,
     pending: usize,
-    handles: []Handle,
 
+    /// Setup a IO Engine, creating internal structures
+    /// and registering them with the kernel.
     pub fn init(allocator: std.mem.Allocator) !Engine {
-        const fdtable = try allocator.alloc(Handle, 512);
-        @memset(fdtable, 0);
+        ensureKernelVersion(.{ .major = 5, .minor = 19, .patch = 0 }) catch {
+            std.debug.panic("kvcache: kernel is too old (min kernel supported is 6.1)\n", .{});
+        };
+
+        const flags: u32 = linux.IORING_SETUP_DEFER_TASKRUN | linux.IORING_SETUP_SINGLE_ISSUER;
 
         var engine = Engine{
-            .ring = try linux.IoUring.init(MAX_ENTRIES, 0),
-            .handles = fdtable,
+            .ring = try linux.IoUring.init(MAX_ENTRIES, flags),
+            .buffers = undefined,
+            .rawbufs = try allocator.alloc(u8, 512 * 1024),
+            .allocator = allocator,
             .pending = 0,
         };
 
-        try engine.ring.register_files(engine.handles);
+        engine.buffers = try linux.IoUring.BufferGroup.init(
+            &engine.ring,
+            0,
+            engine.rawbufs,
+            512,
+            1024,
+        );
+
         return engine;
     }
 
+    /// Shutdown and destroy the IO Engine, freeing contexts.
     pub fn deinit(self: *Engine) void {
         self.ring.deinit();
+        self.buffers.deinit();
+
+        self.allocator.free(self.rawbufs);
     }
 
-    fn getEntry(self: *Engine) !*linux.io_uring_sqe {
-        const entry = self.ring.get_sqe() catch |err| switch (err) {
-            error.SubmissionQueueFull => blk: {
-                const done = try self.ring.submit();
-                self.pending -= done;
+    /// Internal helper function for ensuring kernel is
+    /// newer than the `min` version specified.
+    fn ensureKernelVersion(min: std.SemanticVersion) !void {
+        var uts: linux.utsname = undefined;
+        const res = linux.uname(&uts);
+        switch (linux.E.init(res)) {
+            .SUCCESS => {},
+            else => |errno| return posix.unexpectedErrno(errno),
+        }
 
-                // TODO: what if get_sqe errors out again?
-                break :blk self.ring.get_sqe();
-            },
-            else => return err,
+        const release = std.mem.sliceTo(&uts.release, 0);
+        var current = try std.SemanticVersion.parse(release);
+        current.pre = null; // don't check pre field
+
+        if (min.order(current) == .gt) return error.SystemOutdated;
+    }
+
+    /// Internal helper for getting SQE entries, flushing the
+    /// SQE queue until we are able to nab a entry.
+    fn getEntry(self: *Engine) !*linux.io_uring_sqe {
+        const entry = self.ring.get_sqe() catch |err| retry: {
+            if (err != error.SubmissionQueueFull)
+                return err;
+
+            _ = try self.ring.submit();
+            self.pending = 0;
+
+            var sqe = self.ring.get_sqe();
+
+            while (sqe == error.SubmissionQueueFull) {
+                _ = try self.ring.submit();
+                self.pending = 0;
+
+                sqe = self.ring.get_sqe();
+            }
+
+            break :retry sqe;
         };
 
         self.pending += 1;
@@ -68,32 +158,49 @@ pub const Engine = struct {
         return entry;
     }
 
-    pub fn submit(self: *Engine, wait_entry_count: u32) !u32 {
-        const done = try self.ring.submit_and_wait(wait_entry_count);
-        self.pending -= done;
-
-        return done;
+    /// Flushes the SQE queue by entering the kernel
+    pub fn flush(self: *Engine, comptime wait: bool) !void {
+        if (wait) {
+            self.pending -= try self.ring.submit_and_wait(1);
+        } else {
+            self.pending -= try self.ring.submit();
+        }
     }
 
-    pub fn flush(self: *Engine) !void {
-        var cqes: [128]linux.io_uring_cqe = undefined;
-
+    /// Enters the main runloop for the IO Uring, which looks
+    /// like this:
+    ///
+    ///   Enter kernel to flush -> loop over completions -> start over
+    ///
+    /// Exits only on errors thrown, otherwise waits in-kernel for ops
+    /// to complete...
+    ///
+    pub fn enter(self: *Engine) !void {
         while (true) {
-            if (self.pending != 0) {
-                self.pending -= try self.ring.submit_and_wait(1);
-            }
+            try self.flush(true);
 
-            // `error.SignalInterrupt` should be handled by the callee (just call `flush()` again)
-            const len = try self.ring.copy_cqes(&cqes, 0);
+            while (self.ring.cq_ready() > 0) {
+                const cqe = try self.ring.copy_cqe();
 
-            if (len == 0) {
-                break;
-            }
+                if (cqe.user_data > 0) {
+                    var context: *Context = @ptrFromInt(cqe.user_data);
 
-            for (cqes[0..len]) |cqe| {
-                var context: *Context = @ptrFromInt(cqe.user_data);
+                    if (context.type == .recv) {
+                        try context.handler(context.type, context.userptr, Result{
+                            .res = cqe.res,
+                            .flags = cqe.flags,
+                            .buffer = self.buffers.get_cqe(cqe) catch null,
+                        });
 
-                try context.handler(context.type, context.userptr, Result{ .res = cqe.res, .flags = cqe.flags });
+                        self.buffers.put_cqe(cqe) catch {};
+                    } else {
+                        try context.handler(context.type, context.userptr, Result{
+                            .res = cqe.res,
+                            .flags = cqe.flags,
+                            .buffer = null,
+                        });
+                    }
+                }
             }
         }
     }
@@ -102,12 +209,17 @@ pub const Engine = struct {
     //            Operators
     // --------------------------------
 
-    pub fn do_nop(self: *Engine, ctx: *Context) !void {
+    pub fn do_nop(self: *Engine, ctx: ?*Context) !void {
         var sqe = try self.getEntry();
         sqe.prep_nop();
 
-        ctx.type = .nop;
-        sqe.user_data = @intFromPtr(ctx);
+        // don't generate CQEs on success
+        sqe.flags |= linux.IOSQE_CQE_SKIP_SUCCESS;
+
+        if (ctx) |c| {
+            c.type = .nop;
+            sqe.user_data = @intFromPtr(c);
+        }
     }
 
     pub fn do_read(self: *Engine, handle: Handle, buffer: []u8, offset: u64, ctx: *Context) !void {
@@ -118,27 +230,47 @@ pub const Engine = struct {
         sqe.user_data = @intFromPtr(ctx);
     }
 
-    pub fn do_write(self: *Engine, handle: Handle, buffer: []const u8, offset: u64, ctx: *Context) !void {
+    pub fn do_recv(self: *Engine, handle: Handle, flags: u32, ctx: *Context) !void {
+        var sqe = try self.getEntry();
+        sqe.prep_rw(.RECV, handle, 0, 0, 0);
+
+        sqe.rw_flags = flags;
+        sqe.flags |= linux.IOSQE_BUFFER_SELECT;
+        sqe.buf_index = self.buffers.group_id;
+
+        ctx.type = .recv;
+        sqe.user_data = @intFromPtr(ctx);
+    }
+
+    pub fn do_write(self: *Engine, handle: Handle, buffer: []const u8, offset: u64, ctx: ?*Context) !void {
         var sqe = try self.getEntry();
         sqe.prep_write(handle, buffer, offset);
 
-        ctx.type = .write;
-        sqe.user_data = @intFromPtr(ctx);
+        // don't generate CQEs on success
+        sqe.flags |= linux.IOSQE_CQE_SKIP_SUCCESS;
+
+        if (ctx) |c| {
+            c.type = .write;
+            sqe.user_data = @intFromPtr(c);
+        }
     }
 
-    pub fn do_close(self: *Engine, handle: Handle, ctx: *Context) !void {
+    pub fn do_close(self: *Engine, handle: Handle, ctx: ?*Context) !void {
         var sqe = try self.getEntry();
-        sqe.prep_close(handle);
+        sqe.prep_close(@intCast(handle));
 
-        ctx.type = .close;
-        sqe.user_data = @intFromPtr(ctx);
+        // don't generate CQEs on success
+        sqe.flags |= linux.IOSQE_CQE_SKIP_SUCCESS;
+
+        if (ctx) |c| {
+            c.type = .close;
+            sqe.user_data = @intFromPtr(c);
+        }
     }
 
-    pub fn do_accept_multishot(self: *Engine, handle: Handle, ctx: *Context) !void {
+    pub fn do_accept(self: *Engine, handle: Handle, ctx: *Context) !void {
         var sqe = try self.getEntry();
         sqe.prep_accept(handle, null, null, 0);
-
-        sqe.ioprio |= 0b1; // IO_URING_ACCEPT_MULTISHOT
 
         sqe.user_data = @intFromPtr(ctx);
         ctx.type = .accept;
@@ -147,7 +279,7 @@ pub const Engine = struct {
 
 /// Creates a server socket, bind it and listen on it.
 pub fn createSocket(port: u16) !Handle {
-    const sockfd = try posix.socket(posix.AF.INET6, posix.SOCK.STREAM, 0);
+    const sockfd = try posix.socket(posix.AF.INET6, posix.SOCK.STREAM | posix.SOCK.NONBLOCK, 0);
     errdefer posix.close(sockfd);
 
     // allow for multiple listeners on 1 thread
@@ -162,7 +294,7 @@ pub fn createSocket(port: u16) !Handle {
     try posix.setsockopt(
         sockfd,
         posix.IPPROTO.IPV6,
-        os.linux.IPV6.V6ONLY,
+        linux.IPV6.V6ONLY,
         &std.mem.toBytes(@as(c_int, 0)),
     );
 
@@ -182,22 +314,16 @@ fn testingHandler(kind: IoType, ctx: ?*anyopaque, result: Result) anyerror!void 
     }
 
     switch (kind) {
-        .nop => {
-            try std.testing.expect(result.res >= 0); // res < 0 means error
-        },
-
         .read, .write => {
             try std.testing.expect(result.res == 512); // bytes read/written
-        },
-
-        .close => {
-            try std.testing.expect(result.res >= 0); // res < 0 means error
         },
 
         .accept => {
             try std.testing.expect(result.res >= 0); // res < 0 means error
             try std.testing.expect(result.flags == 2); // IORING_CQE_F_MORE
         },
+
+        else => unreachable, // CQEs shouldn't be generated (and when they are, its an error regardless)
     }
 }
 
@@ -212,7 +338,9 @@ test "uring nop" {
     };
 
     try engine.do_nop(&context);
-    _ = try engine.flush();
+
+    // don't wait for a CQE since nop doesn't generate them...
+    try engine.flush(false);
 }
 
 test "uring read/write/close" {
@@ -229,16 +357,17 @@ test "uring read/write/close" {
 
     @memset(write_buffer, 0xE9);
 
-    var context = Context{
+    var read_context = Context{
         .type = undefined,
         .userptr = null,
         .handler = testingHandler,
     };
 
-    try engine.do_write(handle, write_buffer, 0, &context);
-    try engine.do_read(handle, read_buffer, 0, &context);
-    try engine.do_close(handle, &context);
-    _ = try engine.flush();
+    try engine.do_write(handle, write_buffer, 0, null);
+    try engine.do_read(handle, read_buffer, 0, &read_context);
+    try engine.do_close(handle, null);
+
+    try engine.enter();
 
     try std.testing.expectEqualStrings(write_buffer, read_buffer);
     try std.fs.cwd().deleteFile("testing.txt");
@@ -263,7 +392,8 @@ test "uring accept multishot" {
         .handler = testingHandler,
     };
 
-    try engine.do_accept_multishot(socket, &context);
-    try engine.do_close(socket, &context);
-    _ = try engine.flush();
+    try engine.do_accept(socket, &context);
+    try engine.do_close(socket, null);
+
+    try engine.enter();
 }

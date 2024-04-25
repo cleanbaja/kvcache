@@ -6,9 +6,6 @@ const Self = @This();
 
 const ClientList = std.SinglyLinkedList(*Client);
 
-const CTX_READ = 0;
-const CTX_WRITE = 0;
-
 const Client = struct {
     handle: io.Handle,
     contexts: [2]io.Context,
@@ -60,7 +57,6 @@ pub fn init(allocator: std.mem.Allocator) !Self {
 pub fn deinit(self: *Self) void {
     self.store.deinit();
     self.engine.deinit();
-    self.allocator.free(self.engine.handles);
 
     std.posix.close(self.socket);
 }
@@ -127,21 +123,25 @@ fn handleRequest(kind: io.IoType, ctx: ?*anyopaque, result: io.Result) !void {
             var client = try Client.init(self.allocator, self, result.res, Self.handleRequest);
             self.clients.prepend(&client.node);
 
-            try self.engine.do_read(client.handle, client.buffer, 0, &client.contexts[0]);
+            try self.engine.do_recv(client.handle, 0, &client.contexts[0]);
+            try self.engine.do_accept(self.socket, &self.accept_ctx);
         },
 
-        .read => {
+        .recv => {
             var client: *Client = @alignCast(@ptrCast(ctx));
             var self = client.parent;
 
             if (result.res <= 0) {
+                if (result.res < 0) {
+                    return;
+                }
                 try self.engine.do_close(client.handle, &client.contexts[1]);
 
                 return;
             }
 
-            try self.process(client, client.buffer[0..@intCast(result.res)]);
-            try self.engine.do_read(client.handle, client.buffer, 0, &client.contexts[0]);
+            try self.process(client, result.buffer.?);
+            try self.engine.do_recv(client.handle, 0, &client.contexts[0]);
         },
 
         .close => {
@@ -162,9 +162,10 @@ pub fn runLoop(self: *Self) !void {
         .handler = Self.handleRequest,
     };
 
-    try self.engine.do_accept_multishot(self.socket, &self.accept_ctx);
+    try self.engine.do_accept(self.socket, &self.accept_ctx);
 
+    // enter the IO runloop
     while (true) {
-        try self.engine.flush();
+        try self.engine.enter();
     }
 }
