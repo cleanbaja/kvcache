@@ -6,6 +6,7 @@ const Self = @This();
 
 const ClientList = std.SinglyLinkedList(*Client);
 
+/// Represents a single redis client connected to the server...
 const Client = struct {
     handle: io.Handle,
     contexts: [2]io.Context,
@@ -16,6 +17,7 @@ const Client = struct {
     lib_ver: ?[]const u8,
     buffer: []u8,
 
+    /// Create a client from a socket, linking back to the parent server.
     pub fn init(allocator: std.mem.Allocator, parent: *Self, handle: io.Handle, func: anytype) !*Client {
         const client = try allocator.create(Client);
         const ctx = .{ .userptr = client, .handler = func, .type = .nop };
@@ -43,6 +45,7 @@ store: std.StringHashMap([]const u8),
 socket: io.Handle,
 accept_ctx: io.Context,
 
+/// Create a server with the provided allocator.
 pub fn init(allocator: std.mem.Allocator) !Self {
     return Self{
         .engine = try io.Engine.init(allocator),
@@ -54,6 +57,7 @@ pub fn init(allocator: std.mem.Allocator) !Self {
     };
 }
 
+/// Shutdown the server, cleaning up contexts.
 pub fn deinit(self: *Self) void {
     self.store.deinit();
     self.engine.deinit();
@@ -61,12 +65,14 @@ pub fn deinit(self: *Self) void {
     std.posix.close(self.socket);
 }
 
+/// Destroys `client` after they disconnect (or error).
 fn destroyClient(self: *Self, client: *Client) !void {
     self.clients.remove(&client.node);
     self.allocator.free(client.buffer);
     self.allocator.destroy(client);
 }
 
+/// Processes redis commands for `client`
 fn process(self: *Self, client: *Client, buffer: []u8) !void {
     var parser = pr.Parser.init(self.allocator);
 
@@ -155,6 +161,8 @@ fn handleRequest(kind: io.IoType, ctx: ?*anyopaque, result: io.Result) !void {
     }
 }
 
+/// The main server runloop, which sets up remaining parts
+/// of the server before entering the IO engine runloop.
 pub fn runLoop(self: *Self) !void {
     self.accept_ctx = io.Context{
         .type = .nop,
@@ -163,9 +171,8 @@ pub fn runLoop(self: *Self) !void {
     };
 
     try self.engine.do_accept(self.socket, &self.accept_ctx);
+    try io.attachSigListener();
 
     // enter the IO runloop
-    while (true) {
-        try self.engine.enter();
-    }
+    try self.engine.enter();
 }

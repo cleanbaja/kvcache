@@ -41,6 +41,7 @@
 //!
 
 const std = @import("std");
+const root = @import("root");
 const builtin = @import("builtin");
 
 const posix = std.posix;
@@ -82,15 +83,16 @@ pub const Engine = struct {
     /// and registering them with the kernel.
     pub fn init(allocator: std.mem.Allocator) !Engine {
         ensureKernelVersion(.{ .major = 5, .minor = 19, .patch = 0 }) catch {
-            std.debug.panic("kvcache: kernel is too old (min kernel supported is 6.1)\n", .{});
+            std.debug.panic("kvcache: kernel is too old (min kernel supported is 5.19)\n", .{});
         };
 
         const flags: u32 = linux.IORING_SETUP_DEFER_TASKRUN | linux.IORING_SETUP_SINGLE_ISSUER;
 
         var engine = Engine{
             .ring = try linux.IoUring.init(MAX_ENTRIES, flags),
-            .buffers = undefined,
             .rawbufs = try allocator.alloc(u8, 512 * 1024),
+
+            .buffers = undefined,
             .allocator = allocator,
             .pending = 0,
         };
@@ -109,8 +111,6 @@ pub const Engine = struct {
     /// Shutdown and destroy the IO Engine, freeing contexts.
     pub fn deinit(self: *Engine) void {
         self.ring.deinit();
-        self.buffers.deinit();
-
         self.allocator.free(self.rawbufs);
     }
 
@@ -158,7 +158,7 @@ pub const Engine = struct {
         return entry;
     }
 
-    /// Flushes the SQE queue by entering the kernel
+    /// Flushes the SQE queue by entering the kernel.
     pub fn flush(self: *Engine, comptime wait: bool) !void {
         if (wait) {
             self.pending -= try self.ring.submit_and_wait(1);
@@ -167,19 +167,20 @@ pub const Engine = struct {
         }
     }
 
+    ///
     /// Enters the main runloop for the IO Uring, which looks
     /// like this:
     ///
     ///   Enter kernel to flush -> loop over completions -> start over
     ///
-    /// Exits only on errors thrown, otherwise waits in-kernel for ops
-    /// to complete...
+    /// Exits on errors thrown (or signals recieved), otherwise waits
+    /// in-kernel for ops to complete...
     ///
     pub fn enter(self: *Engine) !void {
-        while (true) {
+        while (root.running) {
             try self.flush(true);
 
-            while (self.ring.cq_ready() > 0) {
+            while (self.ring.cq_ready() > 0 and root.running) {
                 const cqe = try self.ring.copy_cqe();
 
                 if (cqe.user_data > 0) {
@@ -276,6 +277,37 @@ pub const Engine = struct {
         ctx.type = .accept;
     }
 };
+
+/// Registers signal handlers with the kernel
+pub fn attachSigListener() !void {
+    {
+        var act = posix.Sigaction{
+            .handler = .{
+                .handler = posix.SIG.IGN,
+            },
+            .mask = posix.empty_sigset,
+            .flags = 0,
+        };
+        try posix.sigaction(posix.SIG.PIPE, &act, null);
+    }
+    {
+        var act = posix.Sigaction{
+            .handler = .{
+                .handler = struct {
+                    fn wrapper(sig: c_int) callconv(.C) void {
+                        std.debug.print("kvcache: caught signal {d}, shutting down...\n", .{sig});
+                        root.running = false;
+                    }
+                }.wrapper,
+            },
+            .mask = posix.empty_sigset,
+            .flags = 0,
+        };
+
+        try posix.sigaction(posix.SIG.TERM, &act, null);
+        try posix.sigaction(posix.SIG.INT, &act, null);
+    }
+}
 
 /// Creates a server socket, bind it and listen on it.
 pub fn createSocket(port: u16) !Handle {

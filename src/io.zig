@@ -38,3 +38,9 @@ pub const createSocket = switch (builtin.target.os.tag) {
     .linux => linux.createSocket,
     else => @compileError("no IO layer for platform..."),
 };
+
+/// Sets up signal listeners (which shut down the server).
+pub const attachSigListener = switch (builtin.target.os.tag) {
+    .linux => linux.attachSigListener,
+    else => @compileError("no IO layer for platform..."),
+};

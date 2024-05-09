@@ -44,7 +44,7 @@ const ParseError = error{
 
     /// Input passed into parser is malformed.
     InvalidInput,
-    
+
     /// Unable to allocate memory for ArrayList.resize()
     OutOfMemory
 
