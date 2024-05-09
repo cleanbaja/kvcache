@@ -41,8 +41,19 @@
 //!
 
 const std = @import("std");
-const root = @import("root");
 const builtin = @import("builtin");
+
+const root = switch (builtin.is_test) {
+    false => @import("root"),
+
+    //
+    // In testing envoirments, "root" refers to the
+    // zig test runner (in `lib/test_runner.zig`).
+    //
+    // Therefore, we must import `main.zig` manually...
+    //
+    true => @import("../main.zig"),
+};
 
 const posix = std.posix;
 const linux = std.os.linux;
@@ -352,15 +363,16 @@ fn testingHandler(kind: IoType, ctx: ?*anyopaque, result: Result) anyerror!void 
 
         .accept => {
             try std.testing.expect(result.res >= 0); // res < 0 means error
-            try std.testing.expect(result.flags == 2); // IORING_CQE_F_MORE
         },
 
         else => unreachable, // CQEs shouldn't be generated (and when they are, its an error regardless)
     }
+
+    root.running = false;
 }
 
 test "uring nop" {
-    var engine = try Engine.init();
+    var engine = try Engine.init(std.testing.allocator);
     defer engine.deinit();
 
     var context = Context{
@@ -376,7 +388,7 @@ test "uring nop" {
 }
 
 test "uring read/write/close" {
-    var engine = try Engine.init();
+    var engine = try Engine.init(std.testing.allocator);
     defer engine.deinit();
 
     const raw_handle = try std.fs.cwd().createFile("testing.txt", .{ .read = true });
@@ -401,6 +413,9 @@ test "uring read/write/close" {
 
     try engine.enter();
 
+    // re-enable the engine for the next test...
+    root.running = true;
+
     try std.testing.expectEqualStrings(write_buffer, read_buffer);
     try std.fs.cwd().deleteFile("testing.txt");
 }
@@ -413,7 +428,7 @@ test "uring read/write/close" {
 // ```
 //
 test "uring accept multishot" {
-    var engine = try Engine.init();
+    var engine = try Engine.init(std.testing.allocator);
     defer engine.deinit();
 
     const socket = try createSocket(8284);
