@@ -82,7 +82,7 @@ jobs:
       run: |
         git clone --depth 1 https://github.com/scylladb/seastar && cd seastar
         sudo ./install-dependencies.sh
-        ./configure.py --mode=release --compiler='clang++' --c-compiler='clang' --c++-standard=20 --enable-io_uring
+        ./configure.py --mode=release --compiler='clang++' --c-compiler='clang' --cook fmt --c++-standard=20 --enable-io_uring
         sudo ninja -C build/release install
 
     # make sure coverage is only enabled for Debug builds, since it sets -O0 to make sure coverage
