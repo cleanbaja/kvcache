@@ -1,0 +1,120 @@
+name: ci
+on:
+  pull_request:
+  release:
+    types: [published]
+  push:
+    tags:
+    branches:
+      - main
+      - develop
+
+env:
+  CLANG_TIDY_VERSION: "18.1.8"
+  VERBOSE: 1
+
+jobs:
+  Test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+
+      # Recommendations:
+      #   * support at least 1 operating system
+      #   * support at least 2 compilers
+      #   * make sure all supported configurations for your project are built
+      #
+      # Disable/enable builds in this list to meet the above recommendations
+      # and your own projects needs
+      matrix:
+        os:
+          - ubuntu-20.04
+        compiler:
+          # you can specify the version after `-` like "llvm-15.0.2".
+          - llvm-18
+          - gcc-14
+        generator:
+          - "Ninja Multi-Config"
+        build_type:
+          - Release
+          - Debug
+        packaging_maintainer_mode:
+          - ON
+          - OFF
+        build_shared:
+          - OFF
+
+        include:
+          # Add appropriate variables for gcov version required. This will intentionally break
+          # if you try to use a compiler that does not have gcov set
+          - compiler: gcc-14
+            gcov_executable: gcov
+            enable_ipo: On
+
+          - compiler: llvm-18.1.8
+            enable_ipo: Off
+            gcov_executable: "llvm-cov gcov"
+
+          # Set up preferred package generators, for given build configurations
+          - build_type: Release
+            packaging_maintainer_mode: OFF
+            package_generator: TBZ2
+
+          # This exists solely to make sure a non-multiconfig build works
+          - os: ubuntu-20.04
+            compiler: gcc-14
+            generator: "Unix Makefiles"
+            build_type: Debug
+            gcov_executable: gcov
+            packaging_maintainer_mode: On
+            enable_ipo: Off
+
+    steps:
+      - name: Check for llvm version mismatches
+        if: ${{ contains(matrix.compiler, 'llvm') && !contains(matrix.compiler, env.CLANG_TIDY_VERSION) }}
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('There is a mismatch between configured llvm compiler and clang-tidy version chosen')
+
+      - uses: actions/checkout@v3
+
+      - name: Setup Cache
+        uses: ./.github/actions/setup_cache
+        with:
+          compiler: ${{ matrix.compiler }}
+          build_type: ${{ matrix.build_type }}
+          packaging_maintainer_mode: ${{ matrix.packaging_maintainer_mode }}
+          generator: ${{ matrix.generator }}
+
+      - name: Setup Cpp
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: ${{ matrix.compiler }}
+          vcvarsall: ${{ contains(matrix.os, 'windows' )}}
+
+          cmake: true
+          ninja: true
+          vcpkg: false
+          ccache: true
+          clangtidy: ${{ env.CLANG_TIDY_VERSION }}
+  
+          cppcheck: true
+
+          gcovr: true
+          opencppcoverage: true
+
+      - name: Build & Install Seastar
+        run: |
+          sudo ./install-dependencies.sh
+          ./configure.py --mode=release --c++-standard=20 --enable-io_uring
+          ninja -C build/release install
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B ./build -G "${{matrix.generator}}" -D${{ env.PROJECT_NAME }}_ENABLE_IPO=${{matrix.enable_ipo }} -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -D${{ env.PROJECT_NAME }}_PACKAGING_MAINTAINER_MODE:BOOL=${{matrix.packaging_maintainer_mode}} -D${{ env.PROJECT_NAME }}_ENABLE_COVERAGE:BOOL=${{ matrix.build_type == 'Debug' }} -DGIT_SHA:STRING=${{ github.sha }}
+
+      - name: Build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: |
+          cmake --build ./build --config ${{matrix.build_type}}
