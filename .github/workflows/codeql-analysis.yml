@@ -20,7 +20,6 @@ on:
   schedule:
     - cron: '38 0 * * 5'
 
-
 jobs:
   analyze:
     name: Analyze
@@ -62,6 +61,12 @@ jobs:
       uses: cardinalby/export-env-action@v2
       with:
         envFile: '.github/constants.env'
+
+    - name: Build & Install Seastar
+      run: |
+        sudo ./install-dependencies.sh
+        ./configure.py --mode=release --c++-standard=20 --enable-io_uring
+        ninja -C build/release install
 
     - name: Setup Cpp
       uses: aminya/setup-cpp@v1
