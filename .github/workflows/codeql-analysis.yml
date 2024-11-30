@@ -37,14 +37,13 @@ jobs:
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
         compiler:
           # you can specify the version after `-` like "llvm-13.0.0".
-          - gcc-13
+          - llvm-17.0.6
         generator:
           - "Ninja Multi-Config"
         build_type:
           - Debug
         packaging_maintainer_mode:
           - ON
-
 
     steps:
     - uses: actions/checkout@v3
@@ -61,13 +60,6 @@ jobs:
       uses: cardinalby/export-env-action@v2
       with:
         envFile: '.github/constants.env'
-
-    - name: Build & Install Seastar
-      run: |
-        git clone --depth 1 https://github.com/scylladb/seastar && cd seastar
-        sudo ./install-dependencies.sh
-        ./configure.py --mode=release --c++-standard=20 --enable-io_uring
-        ninja -C build/release install
 
     - name: Setup Cpp
       uses: aminya/setup-cpp@v1
@@ -86,8 +78,15 @@ jobs:
         gcovr: false
         opencppcoverage: false
 
-      # make sure coverage is only enabled for Debug builds, since it sets -O0 to make sure coverage
-      # has meaningful results
+    - name: Build & Install Seastar
+      run: |
+        git clone --depth 1 https://github.com/scylladb/seastar && cd seastar
+        sudo ./install-dependencies.sh
+        ./configure.py --mode=release --compiler='clang++' --c-compiler='clang' --c++-standard=20 --enable-io_uring
+        sudo ninja -C build/release install
+
+    # make sure coverage is only enabled for Debug builds, since it sets -O0 to make sure coverage
+    # has meaningful results
     - name: Configure CMake
       run: |
         cmake -S . -B ./build -G "${{matrix.generator}}" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -D${{ env.PROJECT_NAME }}_PACKAGING_MAINTAINER_MODE:BOOL=${{matrix.packaging_maintainer_mode}} -D${{ env.PROJECT_NAME }}_ENABLE_COVERAGE:BOOL=${{ matrix.build_type == 'Debug' }}

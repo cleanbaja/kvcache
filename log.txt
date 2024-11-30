@@ -1,0 +1,668 @@
+[    0.000000] Linux version 5.15.167.4-microsoft-standard-WSL2 (root@f9c826d3017f) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP Tue Nov 5 00:21:55 UTC 2024
+[    0.000000] Command line: initrd=\initrd.img WSL_ROOT_INIT=1 panic=-1 nr_cpus=22 hv_utils.timesync_implicit=1 console=hvc0 debug pty.legacy_count=0 WSL_ENABLE_CRASH_DUMP=1
+[    0.000000] KERNEL supported cpus:
+[    0.000000]   Intel GenuineIntel
+[    0.000000]   AMD AuthenticAMD
+[    0.000000]   Centaur CentaurHauls
+[    0.000000] BIOS-provided physical RAM map:
+[    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009ffff] usable
+[    0.000000] BIOS-e820: [mem 0x00000000000e0000-0x00000000000e0fff] reserved
+[    0.000000] BIOS-e820: [mem 0x0000000000100000-0x00000000001fffff] ACPI data
+[    0.000000] BIOS-e820: [mem 0x0000000000200000-0x00000000f7ffffff] usable
+[    0.000000] BIOS-e820: [mem 0x0000000100000000-0x00000003f8bfffff] usable
+[    0.000000] NX (Execute Disable) protection: active
+[    0.000000] DMI not present or invalid.
+[    0.000000] Hypervisor detected: Microsoft Hyper-V
+[    0.000000] Hyper-V: privilege flags low 0xae7f, high 0x3b8030, hints 0xa4e24, misc 0xe0bed7b2
+[    0.000000] Hyper-V Host Build:22621-10.0-4-0.4455
+[    0.000000] Hyper-V: Nested features: 0x3e0101
+[    0.000000] Hyper-V: LAPIC Timer Frequency: 0x1e8480
+[    0.000000] Hyper-V: Using hypercall for remote TLB flush
+[    0.000000] clocksource: hyperv_clocksource_tsc_page: mask: 0xffffffffffffffff max_cycles: 0x24e6a1710, max_idle_ns: 440795202120 ns
+[    0.000004] tsc: Detected 2995.199 MHz processor
+[    0.000019] e820: update [mem 0x00000000-0x00000fff] usable ==> reserved
+[    0.000024] e820: remove [mem 0x000a0000-0x000fffff] usable
+[    0.000029] last_pfn = 0x3f8c00 max_arch_pfn = 0x400000000
+[    0.000074] x86/PAT: Configuration [0-7]: WB  WC  UC- UC  WB  WP  UC- WT  
+[    0.000095] last_pfn = 0xf8000 max_arch_pfn = 0x400000000
+[    0.000111] Using GB pages for direct mapping
+[    0.000675] RAMDISK: [mem 0x03de4000-0x0400bfff]
+[    0.000681] ACPI: Early table checksum verification disabled
+[    0.000685] ACPI: RSDP 0x00000000000E0000 000024 (v02 VRTUAL)
+[    0.000691] ACPI: XSDT 0x0000000000100000 000044 (v01 VRTUAL MICROSFT 00000001 MSFT 00000001)
+[    0.000698] ACPI: FACP 0x0000000000101000 000114 (v06 VRTUAL MICROSFT 00000001 MSFT 00000001)
+[    0.000705] ACPI: DSDT 0x00000000001011B8 01E191 (v02 MSFTVM DSDT01   00000001 MSFT 05000000)
+[    0.000709] ACPI: FACS 0x0000000000101114 000040
+[    0.000712] ACPI: OEM0 0x0000000000101154 000064 (v01 VRTUAL MICROSFT 00000001 MSFT 00000001)
+[    0.000716] ACPI: SRAT 0x000000000011F349 000410 (v02 VRTUAL MICROSFT 00000001 MSFT 00000001)
+[    0.000720] ACPI: APIC 0x000000000011F759 0000F8 (v04 VRTUAL MICROSFT 00000001 MSFT 00000001)
+[    0.000723] ACPI: Reserving FACP table memory at [mem 0x101000-0x101113]
+[    0.000726] ACPI: Reserving DSDT table memory at [mem 0x1011b8-0x11f348]
+[    0.000727] ACPI: Reserving FACS table memory at [mem 0x101114-0x101153]
+[    0.000728] ACPI: Reserving OEM0 table memory at [mem 0x101154-0x1011b7]
+[    0.000729] ACPI: Reserving SRAT table memory at [mem 0x11f349-0x11f758]
+[    0.000730] ACPI: Reserving APIC table memory at [mem 0x11f759-0x11f850]
+[    0.001079] Zone ranges:
+[    0.001081]   DMA      [mem 0x0000000000001000-0x0000000000ffffff]
+[    0.001084]   DMA32    [mem 0x0000000001000000-0x00000000ffffffff]
+[    0.001086]   Normal   [mem 0x0000000100000000-0x00000003f8bfffff]
+[    0.001088]   Device   empty
+[    0.001089] Movable zone start for each node
+[    0.001090] Early memory node ranges
+[    0.001091]   node   0: [mem 0x0000000000001000-0x000000000009ffff]
+[    0.001092]   node   0: [mem 0x0000000000200000-0x00000000f7ffffff]
+[    0.001094]   node   0: [mem 0x0000000100000000-0x00000003f8bfffff]
+[    0.001096] Initmem setup node 0 [mem 0x0000000000001000-0x00000003f8bfffff]
+[    0.001309] On node 0, zone DMA: 1 pages in unavailable ranges
+[    0.001335] On node 0, zone DMA: 352 pages in unavailable ranges
+[    0.016383] On node 0, zone Normal: 29696 pages in unavailable ranges
+[    0.016444] ACPI: LAPIC_NMI (acpi_id[0x01] dfl dfl lint[0x1])
+[    0.016787] IOAPIC[0]: apic_id 22, version 17, address 0xfec00000, GSI 0-23
+[    0.016793] ACPI: INT_SRC_OVR (bus 0 bus_irq 9 global_irq 9 high level)
+[    0.016799] ACPI: Using ACPI (MADT) for SMP configuration information
+[    0.016801] TSC deadline timer available
+[    0.016803] smpboot: Allowing 22 CPUs, 0 hotplug CPUs
+[    0.016814] [mem 0xf8000000-0xffffffff] available for PCI devices
+[    0.016816] Booting paravirtualized kernel on Hyper-V
+[    0.016818] clocksource: refined-jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[    0.023875] setup_percpu: NR_CPUS:256 nr_cpumask_bits:256 nr_cpu_ids:22 nr_node_ids:1
+[    0.025946] percpu: Embedded 54 pages/cpu s180696 r8192 d32296 u262144
+[    0.025956] pcpu-alloc: s180696 r8192 d32296 u262144 alloc=1*2097152
+[    0.025960] pcpu-alloc: [0] 00 01 02 03 04 05 06 07 [0] 08 09 10 11 12 13 14 15 
+[    0.025969] pcpu-alloc: [0] 16 17 18 19 20 21 -- -- 
+[    0.025988] Hyper-V: PV spinlocks enabled
+[    0.025990] PV qspinlock hash table entries: 256 (order: 0, 4096 bytes, linear)
+[    0.025997] Built 1 zonelists, mobility grouping on.  Total pages: 4066261
+[    0.026000] Kernel command line: initrd=\initrd.img WSL_ROOT_INIT=1 panic=-1 nr_cpus=22 hv_utils.timesync_implicit=1 console=hvc0 debug pty.legacy_count=0 WSL_ENABLE_CRASH_DUMP=1
+[    0.026101] Unknown kernel command line parameters "WSL_ROOT_INIT=1 WSL_ENABLE_CRASH_DUMP=1", will be passed to user space.
+[    0.026102] printk: log_buf_len individual max cpu contribution: 4096 bytes
+[    0.026104] printk: log_buf_len total cpu_extra contributions: 86016 bytes
+[    0.026105] printk: log_buf_len min size: 131072 bytes
+[    0.026305] printk: log_buf_len: 262144 bytes
+[    0.026306] printk: early log buf free: 125600(95%)
+[    0.030405] Dentry cache hash table entries: 2097152 (order: 12, 16777216 bytes, linear)
+[    0.032546] Inode-cache hash table entries: 1048576 (order: 11, 8388608 bytes, linear)
+[    0.032941] mem auto-init: stack:off, heap alloc:off, heap free:off
+[    0.077877] Memory: 4081188K/16525948K available (18452K kernel code, 2648K rwdata, 9668K rodata, 2016K init, 1776K bss, 402852K reserved, 0K cma-reserved)
+[    0.078009] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=22, Nodes=1
+[    0.078031] ftrace: allocating 52991 entries in 207 pages
+[    0.111982] ftrace: allocated 207 pages with 6 groups
+[    0.112363] rcu: Hierarchical RCU implementation.
+[    0.112365] rcu: 	RCU restricting CPUs from NR_CPUS=256 to nr_cpu_ids=22.
+[    0.112367] 	Rude variant of Tasks RCU enabled.
+[    0.112368] 	Tracing variant of Tasks RCU enabled.
+[    0.112369] rcu: RCU calculated value of scheduler-enlistment delay is 10 jiffies.
+[    0.112370] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=22
+[    0.117491] Using NULL legacy PIC
+[    0.117496] NR_IRQS: 16640, nr_irqs: 600, preallocated irqs: 0
+[    0.117946] random: crng init done
+[    0.117997] Console: colour dummy device 80x25
+[    0.118015] ACPI: Core revision 20210730
+[    0.118109] Failed to register legacy timer interrupt
+[    0.118111] APIC: Switch to symmetric I/O mode setup
+[    0.119833] x2apic enabled
+[    0.121497] Switched APIC routing to physical x2apic.
+[    0.121523] Hyper-V: Using IPI hypercalls
+[    0.121615] clocksource: tsc-early: mask: 0xffffffffffffffff max_cycles: 0x2b2c8e53fc7, max_idle_ns: 440795296122 ns
+[    0.121628] Calibrating delay loop (skipped), value calculated using timer frequency.. 5990.39 BogoMIPS (lpj=29951990)
+[    0.121746] x86/cpu: User Mode Instruction Prevention (UMIP) activated
+[    0.121758] Last level iTLB entries: 4KB 0, 2MB 0, 4MB 0
+[    0.121760] Last level dTLB entries: 4KB 0, 2MB 0, 4MB 0, 1GB 0
+[    0.121766] Spectre V1 : Mitigation: usercopy/swapgs barriers and __user pointer sanitization
+[    0.121769] Spectre V2 : Mitigation: Enhanced / Automatic IBRS
+[    0.121770] Spectre V2 : Spectre v2 / SpectreRSB mitigation: Filling RSB on context switch
+[    0.121771] Spectre V2 : Spectre v2 / PBRSB-eIBRS: Retire a single CALL on VMEXIT
+[    0.121772] RETBleed: Mitigation: Enhanced IBRS
+[    0.121774] Spectre V2 : mitigation: Enabling conditional Indirect Branch Prediction Barrier
+[    0.121776] Speculative Store Bypass: Mitigation: Speculative Store Bypass disabled via prctl and seccomp
+[    0.121794] x86/fpu: Supporting XSAVE feature 0x001: 'x87 floating point registers'
+[    0.121796] x86/fpu: Supporting XSAVE feature 0x002: 'SSE registers'
+[    0.121797] x86/fpu: Supporting XSAVE feature 0x004: 'AVX registers'
+[    0.121800] x86/fpu: xstate_offset[2]:  576, xstate_sizes[2]:  256
+[    0.121801] x86/fpu: Enabled xstate features 0x7, context size is 832 bytes, using 'compacted' format.
+[    0.131620] Freeing SMP alternatives memory: 60K
+[    0.131620] pid_max: default: 32768 minimum: 301
+[    0.131620] LSM: Security Framework initializing
+[    0.131620] landlock: Up and running.
+[    0.131620] Mount-cache hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.131620] Mountpoint-cache hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.131620] smpboot: CPU0: Intel(R) Core(TM) Ultra 7 155H (family: 0x6, model: 0xaa, stepping: 0x4)
+[    0.131620] Performance Events: unsupported p6 CPU model 170 no PMU driver, software events only.
+[    0.131620] signal: max sigframe size: 1776
+[    0.131620] rcu: Hierarchical SRCU implementation.
+[    0.131620] smp: Bringing up secondary CPUs ...
+[    0.131620] x86: Booting SMP configuration:
+[    0.131620] .... node  #0, CPUs:        #1  #2  #3  #4  #5  #6  #7  #8  #9 #10 #11 #12 #13 #14 #15 #16 #17 #18 #19 #20 #21
+[    0.143205] smp: Brought up 1 node, 22 CPUs
+[    0.143205] smpboot: Max logical packages: 1
+[    0.143205] smpboot: Total of 22 processors activated (131788.75 BogoMIPS)
+[    0.175373] node 0 deferred pages initialised in 20ms
+[    0.181653] devtmpfs: initialized
+[    0.181678] x86/mm: Memory block size: 128MB
+[    0.182285] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[    0.182285] futex hash table entries: 8192 (order: 7, 524288 bytes, linear)
+[    0.182736] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.182892] audit: initializing netlink subsys (disabled)
+[    0.182925] audit: type=2000 audit(1732644270.060:1): state=initialized audit_enabled=0 res=1
+[    0.182925] thermal_sys: Registered thermal governor 'step_wise'
+[    0.182925] cpuidle: using governor menu
+[    0.182925] ACPI: bus type PCI registered
+[    0.182925] PCI: Fatal: No config space access function found
+[    0.183260] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.183311] HugeTLB registered 1.00 GiB page size, pre-allocated 0 pages
+[    0.183311] HugeTLB registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.191826] raid6: skip pq benchmark and using algorithm avx2x4
+[    0.191826] raid6: using avx2x2 recovery algorithm
+[    0.191826] ACPI: Added _OSI(Module Device)
+[    0.191826] ACPI: Added _OSI(Processor Device)
+[    0.191826] ACPI: Added _OSI(3.0 _SCP Extensions)
+[    0.191826] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.191826] ACPI: Added _OSI(Linux-Dell-Video)
+[    0.191826] ACPI: Added _OSI(Linux-Lenovo-NV-HDMI-Audio)
+[    0.191826] ACPI: Added _OSI(Linux-HPI-Hybrid-Graphics)
+[    0.203384] ACPI: 1 ACPI AML tables successfully acquired and loaded
+[    0.204243] ACPI: Interpreter enabled
+[    0.204247] ACPI: PM: (supports S0 S5)
+[    0.204249] ACPI: Using IOAPIC for interrupt routing
+[    0.204257] PCI: Using host bridge windows from ACPI; if necessary, use "pci=nocrs" and report a bug
+[    0.204405] ACPI: Enabled 2 GPEs in block 00 to 0F
+[    0.205720] iommu: Default domain type: Translated 
+[    0.205722] iommu: DMA domain TLB invalidation policy: lazy mode 
+[    0.205799] SCSI subsystem initialized
+[    0.205808] ACPI: bus type USB registered
+[    0.205817] usbcore: registered new interface driver usbfs
+[    0.205822] usbcore: registered new interface driver hub
+[    0.205833] usbcore: registered new device driver usb
+[    0.205842] pps_core: LinuxPPS API ver. 1 registered
+[    0.205843] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.205846] PTP clock support registered
+[    0.205878] hv_vmbus: Vmbus version:5.3
+[    0.205878] PCI: Using ACPI for IRQ routing
+[    0.205878] PCI: System does not support PCI
+[    0.214027] hv_vmbus: Unknown GUID: c376c1c3-d276-48d2-90a9-c04748072c60
+[    0.214082] hv_vmbus: Unknown GUID: 6e382d18-3336-4f4b-acc4-2b7703d4df4a
+[    0.212996] clocksource: Switched to clocksource tsc-early
+[    0.214098] hv_vmbus: Unknown GUID: dde9cbc0-5060-4436-9448-ea1254a5d177
+[    0.214121] hv_vmbus: Unknown GUID: 6e382d18-3336-4f4b-acc4-2b7703d4df4a
+[    0.226630] VFS: Disk quotas dquot_6.6.0
+[    0.226650] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.226669] FS-Cache: Loaded
+[    0.226697] pnp: PnP ACPI init
+[    0.226900] pnp: PnP ACPI: found 1 devices
+[    0.233105] NET: Registered PF_INET protocol family
+[    0.233614] IP idents hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.235696] tcp_listen_portaddr_hash hash table entries: 8192 (order: 5, 131072 bytes, linear)
+[    0.235720] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.235727] TCP established hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    0.236150] TCP bind hash table entries: 65536 (order: 8, 1048576 bytes, linear)
+[    0.236298] TCP: Hash tables configured (established 131072 bind 65536)
+[    0.236347] UDP hash table entries: 8192 (order: 6, 262144 bytes, linear)
+[    0.236662] UDP-Lite hash table entries: 8192 (order: 6, 262144 bytes, linear)
+[    0.236746] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.238186] RPC: Registered named UNIX socket transport module.
+[    0.238190] RPC: Registered udp transport module.
+[    0.238192] RPC: Registered tcp transport module.
+[    0.238192] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    0.238212] PCI: CLS 0 bytes, default 64
+[    0.238248] PCI-DMA: Using software bounce buffering for IO (SWIOTLB)
+[    0.238250] software IO TLB: mapped [mem 0x00000000f4000000-0x00000000f8000000] (64MB)
+[    0.238309] KVM: vmx: using Hyper-V Enlightened VMCS
+[    0.238501] Trying to unpack rootfs image as initramfs...
+[    0.240676] Freeing initrd memory: 2208K
+[    0.532916] kvm: already loaded the other module
+[    0.537007] Initialise system trusted keyrings
+[    0.537110] workingset: timestamp_bits=46 max_order=22 bucket_order=0
+[    0.537797] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    0.538019] NFS: Registering the id_resolver key type
+[    0.538027] Key type id_resolver registered
+[    0.538028] Key type id_legacy registered
+[    0.538031] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[    0.538036] nfs4flexfilelayout_init: NFSv4 Flexfile Layout Driver Registering...
+[    0.538995] Key type cifs.idmap registered
+[    0.539073] fuse: init (API version 7.34)
+[    0.539231] SGI XFS with ACLs, security attributes, realtime, scrub, repair, quota, no debug enabled
+[    0.539540] 9p: Installing v9fs 9p2000 file system support
+[    0.539548] FS-Cache: Netfs '9p' registered for caching
+[    0.539588] FS-Cache: Netfs 'ceph' registered for caching
+[    0.539590] ceph: loaded (mds proto 32)
+[    0.547311] NET: Registered PF_ALG protocol family
+[    0.547316] xor: automatically using best checksumming function   avx       
+[    0.547319] Key type asymmetric registered
+[    0.547320] Asymmetric key parser 'x509' registered
+[    0.547344] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 248)
+[    0.548245] hv_vmbus: registering driver hv_pci
+[    0.548557] hv_pci 1d1d8b20-75c9-4feb-a782-b351d5ed53c2: PCI VMBus probing: Using version 0x10004
+[    0.549384] hv_pci 1d1d8b20-75c9-4feb-a782-b351d5ed53c2: PCI host bridge to bus 75c9:00
+[    0.549386] pci_bus 75c9:00: root bus resource [mem 0x9ffe00000-0x9ffe02fff window]
+[    0.549389] pci_bus 75c9:00: No busn resource found for root bus, will use [bus 00-ff]
+[    0.549912] pci 75c9:00:00.0: [1af4:1043] type 00 class 0x010000
+[    0.550569] pci 75c9:00:00.0: reg 0x10: [mem 0x9ffe00000-0x9ffe00fff 64bit]
+[    0.550985] pci 75c9:00:00.0: reg 0x18: [mem 0x9ffe01000-0x9ffe01fff 64bit]
+[    0.551394] pci 75c9:00:00.0: reg 0x20: [mem 0x9ffe02000-0x9ffe02fff 64bit]
+[    0.553367] pci_bus 75c9:00: busn_res: [bus 00-ff] end is updated to 00
+[    0.553374] pci 75c9:00:00.0: BAR 0: assigned [mem 0x9ffe00000-0x9ffe00fff 64bit]
+[    0.553669] pci 75c9:00:00.0: BAR 2: assigned [mem 0x9ffe01000-0x9ffe01fff 64bit]
+[    0.554119] pci 75c9:00:00.0: BAR 4: assigned [mem 0x9ffe02000-0x9ffe02fff 64bit]
+[    0.554625] hv_pci 1f020e94-6724-4c8c-b22f-7eb06d9c4cef: PCI VMBus probing: Using version 0x10004
+[    0.566598] hv_pci 1f020e94-6724-4c8c-b22f-7eb06d9c4cef: PCI host bridge to bus 6724:00
+[    0.566600] pci_bus 6724:00: No busn resource found for root bus, will use [bus 00-ff]
+[    0.566868] pci 6724:00:00.0: [1414:008a] type 00 class 0x030200
+[    0.569544] pci_bus 6724:00: busn_res: [bus 00-ff] end is updated to 00
+[    0.569815] hv_pci 1d55aa49-334f-4cee-9a9f-e865896f7453: PCI VMBus probing: Using version 0x10004
+[    0.570458] hv_pci 1d55aa49-334f-4cee-9a9f-e865896f7453: PCI host bridge to bus 334f:00
+[    0.570461] pci_bus 334f:00: No busn resource found for root bus, will use [bus 00-ff]
+[    0.570803] pci 334f:00:00.0: [1414:008e] type 00 class 0x030200
+[    0.573770] pci_bus 334f:00: busn_res: [bus 00-ff] end is updated to 00
+[    0.574005] ACPI: AC: AC Adapter [AC1] (off-line)
+[    0.575767] ACPI: battery: Slot [BAT1] (battery present)
+[    0.576978] Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+[    0.622094] Non-volatile memory driver v1.3
+[    0.622488] [drm] Initialized vgem 1.0.0 20120112 for vgem on minor 0
+[    0.624459] printk: console [hvc0] enabled
+[    0.629986] brd: module loaded
+[    0.632268] loop: module loaded
+[    0.632736] hv_vmbus: registering driver hv_storvsc
+[    0.633340] wireguard: WireGuard 1.0.0 loaded. See www.wireguard.com for information.
+[    0.634714] wireguard: Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+[    0.635678] tun: Universal TUN/TAP device driver, 1.6
+[    0.637089] PPP generic driver version 2.4.2
+[    0.637779] PPP BSD Compression module registered
+[    0.638687] PPP Deflate Compression module registered
+[    0.639686] PPP MPPE Compression module registered
+[    0.640085] scsi host0: storvsc_host_t
+[    0.640486] NET: Registered PF_PPPOX protocol family
+[    0.642775] usbcore: registered new interface driver cdc_ether
+[    0.643582] usbcore: registered new interface driver cdc_ncm
+[    0.644185] usbcore: registered new interface driver r8153_ecm
+[    0.645268] hv_vmbus: registering driver hv_netvsc
+[    0.645793] VFIO - User Level meta-driver version: 0.3
+[    0.646424] usbcore: registered new interface driver cdc_acm
+[    0.646901] cdc_acm: USB Abstract Control Model driver for USB modems and ISDN adapters
+[    0.647636] vhci_hcd vhci_hcd.0: USB/IP Virtual Host Controller
+[    0.648489] vhci_hcd vhci_hcd.0: new USB bus registered, assigned bus number 1
+[    0.654559] vhci_hcd: created sysfs vhci_hcd.0
+[    0.655845] usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 5.15
+[    0.660023] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    0.660834] usb usb1: Product: USB/IP Virtual Host Controller
+[    0.661429] usb usb1: Manufacturer: Linux 5.15.167.4-microsoft-standard-WSL2 vhci_hcd
+[    0.661887] usb usb1: SerialNumber: vhci_hcd.0
+[    0.662422] hub 1-0:1.0: USB hub found
+[    0.663059] hub 1-0:1.0: 8 ports detected
+[    0.663563] vhci_hcd vhci_hcd.0: USB/IP Virtual Host Controller
+[    0.664358] vhci_hcd vhci_hcd.0: new USB bus registered, assigned bus number 2
+[    0.665824] usb usb2: We don't know the algorithms for LPM for this host, disabling LPM.
+[    0.666504] usb usb2: New USB device found, idVendor=1d6b, idProduct=0003, bcdDevice= 5.15
+[    0.666973] usb usb2: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    0.668600] usb usb2: Product: USB/IP Virtual Host Controller
+[    0.668961] usb usb2: Manufacturer: Linux 5.15.167.4-microsoft-standard-WSL2 vhci_hcd
+[    0.669384] usb usb2: SerialNumber: vhci_hcd.0
+[    0.669896] hub 2-0:1.0: USB hub found
+[    0.670492] hub 2-0:1.0: 8 ports detected
+[    0.671354] hv_vmbus: registering driver hyperv_keyboard
+[    0.672035] rtc_cmos 00:00: RTC can wake from S4
+[    0.674905] rtc_cmos 00:00: registered as rtc0
+[    0.676082] rtc_cmos 00:00: setting system clock to 2024-11-26T18:04:30 UTC (1732644270)
+[    0.678468] rtc_cmos 00:00: alarms up to one month, 114 bytes nvram
+[    0.680462] device-mapper: ioctl: 4.45.0-ioctl (2021-03-22) initialised: dm-devel@redhat.com
+[    0.682253] device-mapper: raid: Loading target version 1.15.1
+[    0.682690] hid: raw HID events driver (C) Jiri Kosina
+[    0.683222] usbcore: registered new interface driver usbhid
+[    0.683897] usbhid: USB HID core driver
+[    0.684442] hv_utils: Registering HyperV Utility Driver
+[    0.684783] hv_vmbus: registering driver hv_utils
+[    0.685152] hv_vmbus: registering driver hv_balloon
+[    0.685924] hv_vmbus: registering driver dxgkrnl
+[    0.694169] hv_utils: TimeSync IC version 4.0
+[    0.695235] hv_balloon: Using Dynamic Memory protocol version 2.0
+[    0.697456] Free page reporting enabled
+[    0.697834] hv_balloon: Cold memory discard hint enabled with order 9
+[    0.709623] drop_monitor: Initializing network drop monitor service
+[    0.710450] Mirror/redirect action on
+[    0.710859] u32 classifier
+[    0.711069]     Performance counters on
+[    0.711598]     input device check on
+[    0.711969]     Actions configured
+[    0.714506] IPVS: Registered protocols (TCP, UDP)
+[    0.715048] IPVS: Connection hash table configured (size=4096, memory=32Kbytes)
+[    0.715981] IPVS: ipvs loaded.
+[    0.716478] IPVS: [rr] scheduler registered.
+[    0.717045] IPVS: [wrr] scheduler registered.
+[    0.717630] IPVS: [sh] scheduler registered.
+[    0.718294] ipt_CLUSTERIP: ClusterIP Version 0.8 loaded successfully
+[    0.719026] Initializing XFRM netlink socket
+[    0.719661] NET: Registered PF_INET6 protocol family
+[    0.720858] Segment Routing with IPv6
+[    0.721499] In-situ OAM (IOAM) with IPv6
+[    0.721825] NET: Registered PF_PACKET protocol family
+[    0.722232] Bridge firewalling registered
+[    0.722568] 8021q: 802.1Q VLAN Support v1.8
+[    0.723030] sctp: Hash tables configured (bind 256/256)
+[    0.724132] 9pnet: Installing 9P2000 support
+[    0.724431] Key type dns_resolver registered
+[    0.724676] Key type ceph registered
+[    0.725251] libceph: loaded (mon/osd proto 15/24)
+[    0.725964] NET: Registered PF_VSOCK protocol family
+[    0.726534] hv_vmbus: registering driver hv_sock
+[    0.727147] IPI shorthand broadcast: enabled
+[    0.727904] sched_clock: Marking stable (722254594, 3688400)->(748765900, -22822906)
+[    0.730022] registered taskstats version 1
+[    0.732315] Loading compiled-in X.509 certificates
+[    0.738195] Btrfs loaded, crc32c=crc32c-generic, zoned=no, fsverity=no
+[    0.738877] clk: Disabling unused clocks
+[    0.742635] Freeing unused kernel image (initmem) memory: 2016K
+[    0.743057] Write protecting the kernel read-only data: 30720k
+[    0.745319] Freeing unused kernel image (text/rodata gap) memory: 2024K
+[    0.746751] Freeing unused kernel image (rodata/data gap) memory: 572K
+[    0.747220] Run /init as init process
+[    0.747536]   with arguments:
+[    0.748063]     /init
+[    0.748342]   with environment:
+[    0.748869]     HOME=/
+[    0.749174]     TERM=linux
+[    0.749476]     WSL_ROOT_INIT=1
+[    0.749939]     WSL_ENABLE_CRASH_DUMP=1
+[    0.756076] scsi 0:0:0:0: Direct-Access     Msft     Virtual Disk     1.0  PQ: 0 ANSI: 5
+[    0.769694] sd 0:0:0:0: Attached scsi generic sg0 type 0
+[    0.771291] sd 0:0:0:0: [sda] 795504 512-byte logical blocks: (407 MB/388 MiB)
+[    0.772066] sd 0:0:0:0: [sda] Write Protect is on
+[    0.772610] sd 0:0:0:0: [sda] Mode Sense: 0f 00 80 00
+[    0.773159] sd 0:0:0:0: [sda] Write cache: disabled, read cache: enabled, doesn't support DPO or FUA
+[    0.774117] scsi 0:0:0:1: Direct-Access     Msft     Virtual Disk     1.0  PQ: 0 ANSI: 5
+[    0.778358] sd 0:0:0:0: [sda] Attached SCSI disk
+[    0.788628] sd 0:0:0:1: Attached scsi generic sg1 type 0
+[    0.790313] sd 0:0:0:1: [sdb] 8388616 512-byte logical blocks: (4.29 GB/4.00 GiB)
+[    0.790871] sd 0:0:0:1: [sdb] 4096-byte physical blocks
+[    0.791239] sd 0:0:0:1: [sdb] Write Protect is off
+[    0.792928] sd 0:0:0:1: [sdb] Mode Sense: 0f 00 00 00
+[    0.793457] sd 0:0:0:1: [sdb] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+[    0.796514] sd 0:0:0:1: [sdb] Attached SCSI disk
+[    0.835552] EXT4-fs (sda): mounted filesystem without journal. Opts: (null). Quota mode: none.
+[    0.911635] Adding 4194304k swap on /dev/sdb.  Priority:-2 extents:1 across:4194304k 
+[    1.068956] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+[    1.290208] hv_pci c38b3bb7-1fa7-46b9-81ca-5bf97c04a7d1: PCI VMBus probing: Using version 0x10004
+[    1.294151] hv_pci c38b3bb7-1fa7-46b9-81ca-5bf97c04a7d1: PCI host bridge to bus 1fa7:00
+[    1.295572] pci_bus 1fa7:00: root bus resource [mem 0xc00000000-0xe00001fff window]
+[    1.297005] pci_bus 1fa7:00: No busn resource found for root bus, will use [bus 00-ff]
+[    1.298880] pci 1fa7:00:00.0: [1af4:105a] type 00 class 0x088000
+[    1.305348] pci 1fa7:00:00.0: reg 0x10: [mem 0xe00000000-0xe00000fff 64bit]
+[    1.310640] pci 1fa7:00:00.0: reg 0x18: [mem 0xe00001000-0xe00001fff 64bit]
+[    1.314199] pci 1fa7:00:00.0: reg 0x20: [mem 0xc00000000-0xdffffffff 64bit]
+[    1.321587] pci_bus 1fa7:00: busn_res: [bus 00-ff] end is updated to 00
+[    1.322361] pci 1fa7:00:00.0: BAR 4: assigned [mem 0xc00000000-0xdffffffff 64bit]
+[    1.326009] pci 1fa7:00:00.0: BAR 0: assigned [mem 0xe00000000-0xe00000fff 64bit]
+[    1.330195] pci 1fa7:00:00.0: BAR 2: assigned [mem 0xe00001000-0xe00001fff 64bit]
+[    1.349511] virtiofs virtio1: Cache len: 0x200000000 @ 0xc00000000
+[    1.441926] memmap_init_zone_device initialised 2097152 pages in 30ms
+[    1.452004] FS-Cache: Duplicate cookie detected
+[    1.453064] FS-Cache: O-cookie c=00000005 [p=00000002 fl=222 nc=0 na=1]
+[    1.454045] FS-Cache: O-cookie d=00000000dddea790{9P.session} n=000000006cb197a5
+[    1.455208] FS-Cache: O-key=[10] '34323934393337343239'
+[    1.455675] FS-Cache: N-cookie c=00000006 [p=00000002 fl=2 nc=0 na=1]
+[    1.457591] FS-Cache: N-cookie d=00000000dddea790{9P.session} n=00000000f1b726d5
+[    1.459058] FS-Cache: N-key=[10] '34323934393337343239'
+[    1.485858] scsi 0:0:0:2: Direct-Access     Msft     Virtual Disk     1.0  PQ: 0 ANSI: 5
+[    1.510849] sd 0:0:0:2: Attached scsi generic sg2 type 0
+[    1.512708] sd 0:0:0:2: [sdc] 536870912 512-byte logical blocks: (275 GB/256 GiB)
+[    1.514871] sd 0:0:0:2: [sdc] 4096-byte physical blocks
+[    1.516473] sd 0:0:0:2: [sdc] Write Protect is off
+[    1.517370] sd 0:0:0:2: [sdc] Mode Sense: 0f 00 00 00
+[    1.518943] sd 0:0:0:2: [sdc] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+[    1.525828] sd 0:0:0:2: [sdc] Attached SCSI disk
+[    1.536528] EXT4-fs (sdc): mounted filesystem with ordered data mode. Opts: discard,errors=remount-ro,data=ordered. Quota mode: none.
+[    1.553791] clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x2b2c8e53fc7, max_idle_ns: 440795296122 ns
+[    1.561600] clocksource: Switched to clocksource tsc
+[    2.163385] FS-Cache: Duplicate cookie detected
+[    2.164735] FS-Cache: O-cookie c=0000000d [p=00000002 fl=222 nc=0 na=1]
+[    2.165859] FS-Cache: O-cookie d=00000000dddea790{9P.session} n=000000007118bfdc
+[    2.167272] FS-Cache: O-key=[10] '34323934393337353030'
+[    2.168724] FS-Cache: N-cookie c=0000000e [p=00000002 fl=2 nc=0 na=1]
+[    2.169801] FS-Cache: N-cookie d=00000000dddea790{9P.session} n=00000000237264db
+[    2.170698] FS-Cache: N-key=[10] '34323934393337353030'
+[    2.347420] misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+[    2.356267] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[    2.357489] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[    2.358616] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[    2.359829] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[    2.361057] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+[    2.362996] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[    2.364640] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[    2.366130] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[    2.367533] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+[    2.479098] Failed to connect to bus: No such file or directory
+[    2.589604] systemd-journald[52]: Collecting audit messages is disabled.
+[    2.624044] systemd-journald[52]: Received client request to flush runtime journal.
+[    2.628754] systemd-journald[52]: File /var/log/journal/83b80807093e4110a6de3eb49cfc35b8/system.journal corrupted or uncleanly shut down, renaming and replacing.
+[    3.771582] WSL (2): Creating login session for yusuf
+[    4.190326] systemd-journald[52]: /var/log/journal/83b80807093e4110a6de3eb49cfc35b8/user-1000.journal: Journal file uses a different sequence number ID, rotating.
+[   49.822407] hv_balloon: Max. dynamic memory size: 16140 MB
+[  640.851656] mini_init (254): drop_caches: 1
+[ 1130.080979] mini_init (254): drop_caches: 1
+[ 1283.503736] mini_init (254): drop_caches: 1
+[ 1497.498926] mini_init (254): drop_caches: 1
+[ 2248.246647] TCP: eth0: Driver has suspect GRO implementation, TCP performance may be compromised.
+[10768.121945] hv_utils: TimeSync IC version 4.0
+[11862.407203] mini_init (254): drop_caches: 1
+[12141.482605] mini_init (254): drop_caches: 1
+[13947.429400] mini_init (254): drop_caches: 1
+[14134.466596] mini_init (254): drop_caches: 1
+[16086.451231] misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+[16086.456110] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[16086.457005] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[16086.457787] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[16086.458888] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[16086.460088] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+[16086.462888] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[16086.463622] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[16086.464656] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+[16086.466545] misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+[16087.531502] misc dxg: dxgk: dxgvmb_send_create_sync_object: failed -75
+[16087.533453] misc dxg: dxgk: dxgkio_create_sync_object: Ioctl failed: -75
+[16377.733655] mini_init (254): drop_caches: 1
+[16814.366618] mini_init (254): drop_caches: 1
+[17374.009066] mini_init (254): drop_caches: 1
+[18309.821897] mini_init (254): drop_caches: 1
+[18372.088321] mini_init (254): drop_caches: 1
+[18715.419957] mini_init (254): drop_caches: 1
+[18902.790477] mini_init (254): drop_caches: 1
+[18995.094495] mini_init (254): drop_caches: 1
+[19182.511396] mini_init (254): drop_caches: 1
+[19369.645301] mini_init (254): drop_caches: 1
+[20929.206586] hv_utils: TimeSync IC version 4.0
+[24338.420228] mini_init (254): drop_caches: 1
+[25389.514695] mini_init (254): drop_caches: 1
+[33791.315426] mini_init (254): drop_caches: 1
+[35707.811255] mini_init (254): drop_caches: 1
+[35894.220042] mini_init (254): drop_caches: 1
+[37278.294485] mini_init (254): drop_caches: 1
+[38572.813779] mini_init (254): drop_caches: 1
+[38634.544730] mini_init (254): drop_caches: 1
+[40123.284104] mini_init (254): drop_caches: 1
+[41693.008652] mini_init (254): drop_caches: 1
+[41887.112328] mini_init (254): drop_caches: 1
+[42706.553851] potentially unexpected fatal signal 11.
+[42706.553980] CPU: 0 PID: 203389 Comm: example Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[42706.554063] RIP: 0033:0x55f978bc1af6
+[42706.554569] Code: eb 55 66 90 48 8b 73 60 48 8b 4b 48 48 8d 56 ff 48 21 c2 48 83 c0 01 48 8b 3c d1 48 89 43 50 90 48 8b 07 48 89 bd 28 1b 00 00 <ff> 10 48 c7 85 28 1b 00 00 00 00 00 00 90 48 83 43 40 01 48 83 85
+[42706.554573] RSP: 002b:00007fff729cea70 EFLAGS: 00010202
+[42706.554577] RAX: 5f726f7463616572 RBX: 000060000006df00 RCX: 000060000018e280
+[42706.554634] RDX: 0000000000000001 RSI: 0000000000000010 RDI: 0000600000085d20
+[42706.554636] RBP: 000060000016e000 R08: 0000000000416650 R09: 0000000000009e97
+[42706.554639] R10: 0000000000000000 R11: 0000000000000202 R12: 0000000000000001
+[42706.554701] R13: 000060000016faa0 R14: 000024ecd73fa407 R15: 00007fff729cec60
+[42706.554704] FS:  00007f94cd5b7300 GS:  0000000000000000
+[42706.625850] WSL (203433): Capturing crash for pid: 202120, executable: !home!yusuf!builds!test!build!example
+[42706.625863] , signal: 11, port: 50005
+[42753.328842] mini_init (254): drop_caches: 1
+[43454.672538] mini_init (254): drop_caches: 1
+[47590.768235] mini_init (254): drop_caches: 1
+[49139.434386] mini_init (254): drop_caches: 1
+[49481.823929] hv_utils: TimeSync IC version 4.0
+[50331.468434] kvcache[216896]: segfault at 0 ip 0000000000000000 sp 00007ffc453d4e58 error 14 in kvcache[56518b54d000+b0000]
+[50331.468973] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[50331.469026] potentially unexpected fatal signal 11.
+[50331.469065] CPU: 12 PID: 216896 Comm: kvcache Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[50331.469111] RIP: 0033:0x0
+[50331.469264] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[50331.469266] RSP: 002b:00007ffc453d4e58 EFLAGS: 00010202
+[50331.469268] RAX: 0000000000000001 RBX: 0000565191922abc RCX: 0000000000000000
+[50331.469290] RDX: 00007ffc453d4e70 RSI: 00007fbd18691f20 RDI: 00007fbd191a7800
+[50331.469291] RBP: 00007ffc453d4e60 R08: 0000000000004000 R09: 0000000000000010
+[50331.469293] R10: 00007fbd19837b90 R11: 00007fbd19907dd0 R12: 00007fbd1901c420
+[50331.469294] R13: 00007ffc453d4e88 R14: 00007ffc453d4f00 R15: 00007ffc453d4eff
+[50331.469295] FS:  00007fbd180d23c0 GS:  0000000000000000
+[50331.470420] WSL (216897): Capturing crash for pid: 215410, executable: !home!yusuf!code!kvcache!out!build!linux-gcc-debug!src!kvcache
+[50331.470428] , signal: 11, port: 50005
+[50336.078291] kvcache[216988]: segfault at 0 ip 0000000000000000 sp 00007ffcb61a7668 error 14 in kvcache[55f017747000+b0000]
+[50336.078305] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[50336.078311] potentially unexpected fatal signal 11.
+[50336.078313] CPU: 20 PID: 216988 Comm: kvcache Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[50336.078317] RIP: 0033:0x0
+[50336.078322] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[50336.078323] RSP: 002b:00007ffcb61a7668 EFLAGS: 00010202
+[50336.078326] RAX: 0000000000000001 RBX: 000055f01db1cabc RCX: 0000000000000000
+[50336.078327] RDX: 00007ffcb61a7680 RSI: 00007f4d0a935f20 RDI: 00007f4d0b44b800
+[50336.078329] RBP: 00007ffcb61a7670 R08: 0000000000004000 R09: 0000000000000010
+[50336.078330] R10: 00007f4d0badbb90 R11: 00007f4d0bbabdd0 R12: 00007f4d0b2c0420
+[50336.078331] R13: 00007ffcb61a7698 R14: 00007ffcb61a7710 R15: 00007ffcb61a770f
+[50336.078333] FS:  00007f4d0a3763c0 GS:  0000000000000000
+[50336.079234] WSL (216989): Capturing crash for pid: 215501, executable: !home!yusuf!code!kvcache!out!build!linux-gcc-debug!src!kvcache
+[50336.079304] , signal: 11, port: 50005
+[50397.874580] kvcache[217894]: segfault at 0 ip 0000000000000000 sp 00007ffe5632d978 error 14 in kvcache[560d5fbe1000+b0000]
+[50397.874593] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[50397.874599] potentially unexpected fatal signal 11.
+[50397.874600] CPU: 3 PID: 217894 Comm: kvcache Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[50397.874604] RIP: 0033:0x0
+[50397.874608] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[50397.874609] RSP: 002b:00007ffe5632d978 EFLAGS: 00010202
+[50397.874612] RAX: 0000000000000001 RBX: 0000560d65fb6abc RCX: 0000000000000000
+[50397.874643] RDX: 00007ffe5632d990 RSI: 00007f077987af20 RDI: 00007f077a390800
+[50397.874645] RBP: 00007ffe5632d980 R08: 0000000000004000 R09: 0000000000000010
+[50397.874646] R10: 00007f077aa20b90 R11: 00007f077aaf0dd0 R12: 00007f077a205420
+[50397.874647] R13: 00007ffe5632d9a8 R14: 00007ffe5632da20 R15: 00007ffe5632da1f
+[50397.874648] FS:  00007f07792bb3c0 GS:  0000000000000000
+[50397.875508] WSL (217895): Capturing crash for pid: 216405, executable: !home!yusuf!code!kvcache!out!build!linux-gcc-debug!src!kvcache
+[50397.875513] , signal: 11, port: 50005
+[50672.264883] potentially unexpected fatal signal 6.
+[50672.264896] CPU: 21 PID: 221847 Comm: example Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[50672.264902] RIP: 0033:0x7efec0073b1c
+[50672.264911] Code: 00 f0 ff ff 76 8f 41 89 c6 41 f7 de eb 8a b8 ba 00 00 00 0f 05 89 c3 e8 82 6f 05 00 44 89 e2 89 de 89 c7 b8 ea 00 00 00 0f 05 <41> 89 c6 41 f7 de 3d 00 f0 ff ff b8 00 00 00 00 44 0f 46 f0 e9 7b
+[50672.264913] RSP: 002b:00007ffc0274e6f0 EFLAGS: 00000246 ORIG_RAX: 00000000000000ea
+[50672.264917] RAX: 0000000000000000 RBX: 0000000000035cb6 RCX: 00007efec0073b1c
+[50672.264920] RDX: 0000000000000006 RSI: 0000000000035cb6 RDI: 0000000000035cb6
+[50672.264921] RBP: 00007ffc0274e730 R08: 000000000000004f R09: 00007ffc0274e280
+[50672.264922] R10: 0000000000000008 R11: 0000000000000246 R12: 0000000000000006
+[50672.264924] R13: 000055cd78b4a3c0 R14: 0000000000000016 R15: 0000000000000004
+[50672.264925] FS:  00007efebfad5300 GS:  0000000000000000
+[50672.266003] WSL (221848): Capturing crash for pid: 220342, executable: !home!yusuf!builds!test!build!example
+[50672.266011] , signal: 6, port: 50005
+[50672.712396] potentially unexpected fatal signal 6.
+[50672.712401] CPU: 6 PID: 221845 Comm: sudo Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[50672.712404] RIP: 0033:0x7fc0431d152b
+[50672.712409] Code: 5d c3 0f 1f 44 00 00 48 8b 15 e9 d8 1b 00 64 89 02 b8 ff ff ff ff 5d c3 0f 1f 80 00 00 00 00 f3 0f 1e fa b8 3e 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d bd d8 1b 00 f7 d8 64 89 01 48
+[50672.712410] RSP: 002b:00007fffbd56b7a8 EFLAGS: 00000202 ORIG_RAX: 000000000000003e
+[50672.712412] RAX: 0000000000000000 RBX: 0000000000000006 RCX: 00007fc0431d152b
+[50672.712412] RDX: 0000000000000000 RSI: 0000000000000006 RDI: 0000000000035cb4
+[50672.712413] RBP: 00007fffbd56bc70 R08: 000056334fb632dc R09: 00000000fffffffa
+[50672.712413] R10: 00007fc042bd3f60 R11: 0000000000000202 R12: 00007fffbd56bba0
+[50672.712414] R13: 0000000000000086 R14: 00007fffbd56b8b0 R15: 0000000000000685
+[50672.712415] FS:  00007fc042bd40c0 GS:  0000000000000000
+[50894.765389] potentially unexpected fatal signal 11.
+[50894.765396] CPU: 0 PID: 222870 Comm: example Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[50894.765400] RIP: 0033:0x5565ef162b46
+[50894.765408] Code: eb 55 66 90 48 8b 73 60 48 8b 4b 48 48 8d 56 ff 48 21 c2 48 83 c0 01 48 8b 3c d1 48 89 43 50 90 48 8b 07 48 89 bd 28 1b 00 00 <ff> 10 48 c7 85 28 1b 00 00 00 00 00 00 90 48 83 43 40 01 48 83 85
+[50894.765409] RSP: 002b:00007fff37dd75d0 EFLAGS: 00010202
+[50894.765412] RAX: 5f726f7463616572 RBX: 000060000006df00 RCX: 000060000018e280
+[50894.765413] RDX: 0000000000000001 RSI: 0000000000000010 RDI: 0000600000085d20
+[50894.765414] RBP: 000060000016e000 R08: 00000000004b444c R09: 000000000000bd00
+[50894.765415] R10: 0000000000000000 R11: 0000000000000202 R12: 0000000000000001
+[50894.765416] R13: 000060000016faa0 R14: 00002c01764b253e R15: 00007fff37dd77c0
+[50894.765459] FS:  00007fd8a5f74300 GS:  0000000000000000
+[50894.767261] WSL (222920): Capturing crash for pid: 221362, executable: !home!yusuf!builds!test!build!example
+[50894.767267] , signal: 11, port: 50005
+[51214.955626] mini_init (254): drop_caches: 1
+[58271.379082] mini_init (254): drop_caches: 1
+[58333.193309] mini_init (254): drop_caches: 1
+[58487.615125] mini_init (254): drop_caches: 1
+[59195.530951] mini_init (254): drop_caches: 1
+[60376.940625] mini_init (254): drop_caches: 1
+[60531.150062] mini_init (254): drop_caches: 1
+[60624.563521] mini_init (254): drop_caches: 1
+[60999.507472] mini_init (254): drop_caches: 1
+[61364.394049] kvcache[238711]: segfault at 0 ip 0000000000000000 sp 00007ffe548bb738 error 14 in kvcache[5577d974b000+c4000]
+[61364.394173] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[61364.394188] potentially unexpected fatal signal 11.
+[61364.394192] CPU: 21 PID: 238711 Comm: kvcache Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[61364.394200] RIP: 0033:0x0
+[61364.394211] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[61364.394213] RSP: 002b:00007ffe548bb738 EFLAGS: 00010202
+[61364.394218] RAX: 0000000000000001 RBX: 00005577dfb44cfc RCX: 0000000000000000
+[61364.394222] RDX: 00007ffe548bb750 RSI: 00007f3cfc03ff20 RDI: 00007f3cfcb55800
+[61364.394224] RBP: 00007ffe548bb740 R08: 0000000000004000 R09: 0000000000000010
+[61364.394309] R10: 00007f3cfd206b90 R11: 00007f3cfd2d6dd0 R12: 00007f3cfc9ca420
+[61364.394315] R13: 00007ffe548bb768 R14: 00007ffe548bb7e0 R15: 00007ffe548bb7df
+[61364.394318] FS:  00007f3cfba803c0 GS:  0000000000000000
+[61364.396673] WSL (238714): Capturing crash for pid: 236984, executable: !home!yusuf!builds!kvcache!out!src!kvcache
+[61364.396681] , signal: 11, port: 50005
+[61404.522251] mini_init (254): drop_caches: 1
+[61623.015490] mini_init (254): drop_caches: 1
+[61707.293103] kvcache[240909]: segfault at 0 ip 0000000000000000 sp 00007fff752996d8 error 14 in kvcache[557e2cc97000+c4000]
+[61707.293135] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[61707.293151] potentially unexpected fatal signal 11.
+[61707.293155] CPU: 7 PID: 240909 Comm: kvcache Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[61707.293164] RIP: 0033:0x0
+[61707.293174] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[61707.293176] RSP: 002b:00007fff752996d8 EFLAGS: 00010202
+[61707.293181] RAX: 0000000000000001 RBX: 0000557e33090b7c RCX: 0000000000000000
+[61707.293185] RDX: 00007fff752996f0 RSI: 00007f1e50e6af20 RDI: 00007f1e51980800
+[61707.293188] RBP: 00007fff752996e0 R08: 0000000000004000 R09: 0000000000000010
+[61707.293191] R10: 00007f1e52031b90 R11: 00007f1e52101dd0 R12: 00007f1e517f5420
+[61707.293193] R13: 00007fff75299708 R14: 00007fff75299780 R15: 00007fff7529977f
+[61707.293196] FS:  00007f1e508ab3c0 GS:  0000000000000000
+[61707.295411] WSL (240910): Capturing crash for pid: 239164, executable: !home!yusuf!builds!kvcache!out!src!kvcache
+[61707.295423] , signal: 11, port: 50005
+[61716.696064] mini_init (254): drop_caches: 1
+[61809.241094] mini_init (254): drop_caches: 1
+[62327.983343] kvcache[242679]: segfault at 0 ip 0000000000000000 sp 00007ffec01ae968 error 14 in kvcache[55c1289ef000+b0000]
+[62327.983367] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[62327.983377] potentially unexpected fatal signal 11.
+[62327.983380] CPU: 6 PID: 242679 Comm: kvcache Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[62327.983386] RIP: 0033:0x0
+[62327.983395] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[62327.983479] RSP: 002b:00007ffec01ae968 EFLAGS: 00010202
+[62327.983482] RAX: 0000000000000001 RBX: 000055c12edb317c RCX: 0000000000000000
+[62327.983485] RDX: 00007ffec01ae980 RSI: 00007f40a7758f20 RDI: 00007f40a826e800
+[62327.983486] RBP: 00007ffec01ae970 R08: 0000000000004000 R09: 0000000000000010
+[62327.983488] R10: 00007f40a891fb90 R11: 00007f40a89efdd0 R12: 00007f40a80e3420
+[62327.983489] R13: 00007ffec01ae998 R14: 00007ffec01aea10 R15: 00007ffec01aea0f
+[62327.983491] FS:  00007f40a71993c0 GS:  0000000000000000
+[62327.984586] WSL (242680): Capturing crash for pid: 240886, executable: !home!yusuf!builds!kvcache!out!src!kvcache
+[62327.984592] , signal: 11, port: 50005
+[62367.733816] mini_init (254): drop_caches: 1
+[62677.029287] mini_init (254): drop_caches: 1
+[62892.836914] mini_init (254): drop_caches: 1
+[63127.304773] kvcache[246757]: segfault at 0 ip 0000000000000000 sp 00007fff0ed0b018 error 14 in kvcache[55bb9732a000+c4000]
+[63127.304797] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[63127.304806] potentially unexpected fatal signal 11.
+[63127.304809] CPU: 20 PID: 246757 Comm: kvcache Not tainted 5.15.167.4-microsoft-standard-WSL2 #1
+[63127.304814] RIP: 0033:0x0
+[63127.304821] Code: Unable to access opcode bytes at RIP 0xffffffffffffffd6.
+[63127.304822] RSP: 002b:00007fff0ed0b018 EFLAGS: 00010202
+[63127.304825] RAX: 0000000000000001 RBX: 000055bb9d723cfc RCX: 0000000000000000
+[63127.304827] RDX: 00007fff0ed0b030 RSI: 00007f48af391f20 RDI: 00007f48afea7800
+[63127.304828] RBP: 00007fff0ed0b020 R08: 0000000000004000 R09: 0000000000000010
+[63127.304830] R10: 00007f48b0558b90 R11: 00007f48b0628dd0 R12: 00007f48afd1c420
+[63127.304831] R13: 00007fff0ed0b048 R14: 00007fff0ed0b0c0 R15: 00007fff0ed0b0bf
+[63127.304832] FS:  00007f48aedd23c0 GS:  0000000000000000
+[63127.306346] WSL (246758): Capturing crash for pid: 244912, executable: !home!yusuf!builds!kvcache!out!src!kvcache
+[63127.306352] , signal: 11, port: 50005
+[63170.689375] mini_init (254): drop_caches: 1
+[64036.642508] mini_init (254): drop_caches: 1
+[67031.537426] hv_utils: TimeSync IC version 4.0
+[67242.283380] mini_init (254): drop_caches: 1
+[67302.020435] mini_init (254): drop_caches: 1
+[67691.959090] mini_init (254): drop_caches: 1
+[67782.005130] mini_init (254): drop_caches: 1
+[68561.983170] mini_init (254): drop_caches: 1
+[68622.049547] mini_init (254): drop_caches: 1
+[68711.974993] mini_init (254): drop_caches: 1
+[68862.008003] mini_init (254): drop_caches: 1
