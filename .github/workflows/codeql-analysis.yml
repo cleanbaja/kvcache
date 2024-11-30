@@ -64,6 +64,7 @@ jobs:
 
     - name: Build & Install Seastar
       run: |
+        git clone --depth 1 https://github.com/scylladb/seastar && cd seastar
         sudo ./install-dependencies.sh
         ./configure.py --mode=release --c++-standard=20 --enable-io_uring
         ninja -C build/release install
